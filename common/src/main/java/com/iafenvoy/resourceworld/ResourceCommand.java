@@ -1,9 +1,6 @@
 package com.iafenvoy.resourceworld;
 
-import com.iafenvoy.resourceworld.data.PositionLocator;
-import com.iafenvoy.resourceworld.data.SingleWorldData;
-import com.iafenvoy.resourceworld.data.WorldConfig;
-import com.iafenvoy.resourceworld.data.RWDimensions;
+import com.iafenvoy.resourceworld.data.*;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -57,6 +54,11 @@ public final class ResourceCommand {
     }
 
     public static int resetWorld(CommandContext<ServerCommandSource> ctx, RegistryKey<World> key) {
+        ServerCommandSource source = ctx.getSource();
+        MinecraftServer server = source.getServer();
+        ServerWorld world = server.getWorld(key);
+        if (world == null) throw new CommandException(Text.literal("Cannot find world"));
+        WorldReset.reset(world);
         return resetWorld(ctx, List.of(key));
     }
 

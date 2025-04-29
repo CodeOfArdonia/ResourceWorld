@@ -10,6 +10,7 @@
     "LevelPropertiesMixin",
     "MinecraftServerMixin",
     "ServerWorldMixin",
+    "ThreadedAnvilChunkStorageMixin",
     "WorldBorderMixin"
   ],
   "injectors": {

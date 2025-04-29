@@ -1,7 +1,9 @@
 package com.iafenvoy.resourceworld.mixin;
 
 import com.iafenvoy.resourceworld.MixinCache;
+import com.iafenvoy.resourceworld.ResourceWorld;
 import com.iafenvoy.resourceworld.data.WorldConfig;
+import com.iafenvoy.resourceworld.data.WorldReset;
 import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.entry.RegistryEntry;
@@ -30,9 +32,18 @@ public abstract class ServerWorldMixin extends World {
         if (seed != 0) cir.setReturnValue(seed);
     }
 
-    @Inject(method = "tick", at = @At("HEAD"))
+    @Inject(method = "save", at = @At("HEAD"), cancellable = true)
+    private void cancelSaveWhenReset(CallbackInfo ci) {
+        if (WorldReset.RESETTING.contains(this.getRegistryKey())) {
+            ResourceWorld.LOGGER.warn("Cancelled saving due to resource world reset");
+            ci.cancel();
+        }
+    }
+
+    @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
     private void beforeTick(CallbackInfo ci) {
-        MixinCache.CURRENT_TICKING_WORLD = this.getRegistryKey();
+        if (WorldReset.RESETTING.contains(this.getRegistryKey())) ci.cancel();
+        else MixinCache.CURRENT_TICKING_WORLD = this.getRegistryKey();
     }
 
     @Inject(method = "tick", at = @At("RETURN"))

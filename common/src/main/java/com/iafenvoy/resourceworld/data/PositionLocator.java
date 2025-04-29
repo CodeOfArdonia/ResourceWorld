@@ -3,6 +3,7 @@ package com.iafenvoy.resourceworld.data;
 import com.iafenvoy.resourceworld.util.RandomHelper;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.Heightmap;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,11 +18,7 @@ public class PositionLocator {
 
     @Nullable
     public static BlockPos locate(World world, SingleWorldData data) {
-        return Optional.ofNullable(LOCATOR.get(world.getRegistryKey())).map(x -> x.apply(world, data)).map(pos -> {
-            while (!world.isOutOfHeightLimit(pos) && (!world.getBlockState(pos.up()).isAir() || !world.getBlockState(pos).isAir() || !world.getBlockState(pos.down()).isSolidBlock(world, pos.down())))
-                pos = pos.down();
-            return world.isOutOfHeightLimit(pos) ? null : pos.up();
-        }).orElse(null);
+        return Optional.ofNullable(LOCATOR.get(world.getRegistryKey())).map(x -> x.apply(world, data)).filter(x -> world.getChunk(x) != null).map(pos -> world.getTopPosition(Heightmap.Type.MOTION_BLOCKING, pos)).orElse(null);
     }
 
     public static BlockPos randomPos(World world, SingleWorldData data, int y) {
@@ -33,9 +30,6 @@ public class PositionLocator {
     static {
         LOCATOR.put(RWDimensions.RESOURCE_WORLD, (world, data) -> randomPos(world, data, world.getTopY()));
         LOCATOR.put(RWDimensions.RESOURCE_NETHER, (world, data) -> randomPos(world, data, 125));
-        LOCATOR.put(RWDimensions.RESOURCE_END, (world, data) ->
-                data.getCenterX() - data.getRange() < 0 && data.getCenterX() + data.getRange() > 0 &&
-                        data.getCenterZ() - data.getRange() < 0 && data.getCenterZ() + data.getRange() > 0
-                        ? BlockPos.ORIGIN.up(world.getTopY() - 1) : null);
+        LOCATOR.put(RWDimensions.RESOURCE_END, (world, data) -> world.getWorldBorder().contains(0, 0) ? BlockPos.ORIGIN.up(world.getTopY() - 1) : null);
     }
 }

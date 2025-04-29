@@ -8,7 +8,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(MinecraftServer.class)
-public class MinecraftServerMixin {
+public abstract class MinecraftServerMixin {
     @Inject(method = "<init>", at = @At("RETURN"))
     private void onServerStart(CallbackInfo ci) {
         WorldConfig.bootstrap((MinecraftServer) (Object) this);

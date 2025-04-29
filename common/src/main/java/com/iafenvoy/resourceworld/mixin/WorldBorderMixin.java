@@ -1,8 +1,8 @@
 package com.iafenvoy.resourceworld.mixin;
 
 import com.iafenvoy.resourceworld.MixinCache;
-import com.iafenvoy.resourceworld.data.SingleWorldData;
-import com.iafenvoy.resourceworld.data.WorldConfig;
+import com.iafenvoy.resourceworld.config.SingleWorldData;
+import com.iafenvoy.resourceworld.config.WorldConfig;
 import net.minecraft.world.border.WorldBorder;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;

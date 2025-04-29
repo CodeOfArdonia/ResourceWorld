@@ -1,11 +1,14 @@
 package com.iafenvoy.resourceworld.data;
 
 import com.iafenvoy.resourceworld.ResourceWorld;
-import com.iafenvoy.resourceworld.util.ThreadedAnvilChunkStorageAccessor;
+import com.iafenvoy.resourceworld.config.WorldConfig;
+import com.iafenvoy.resourceworld.util.MinecraftServerAccessor;
+import com.iafenvoy.resourceworld.util.Timeout;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.apache.commons.io.FileUtils;
@@ -13,49 +16,64 @@ import org.apache.commons.io.FileUtils;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 
 public final class WorldReset {
     public static final Set<RegistryKey<World>> RESETTING = new HashSet<>();
 
-    public static CompletableFuture<Void> reset(ServerWorld world) {
-        if (WorldConfig.getData(world.getRegistryKey()) == null) return CompletableFuture.runAsync(() -> {
-        });
-        return CompletableFuture.runAsync(() -> {
-            RegistryKey<World> key = world.getRegistryKey();
+    public static void reset(ServerWorld world) {
+        if (WorldConfig.getData(world.getRegistryKey()) == null) return;
+        RegistryKey<World> key = world.getRegistryKey();
+        MinecraftServer server = world.getServer();
+        printInfo(server, "Reset in 3 seconds.", key);
+        Timeout.create(60, () -> {
             if (RESETTING.contains(key)) return;
             RESETTING.add(key);
+            WorldConfig.newSeed(key);
             world.savingDisabled = true;
-            printInfo("Kicking player from world...", key);
-            MinecraftServer server = world.getServer();
+            MinecraftServerAccessor accessor = (MinecraftServerAccessor) server;
+            printInfo(server, "Kicking player from world...", key);
             ServerWorld overworld = server.getOverworld();
             for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList())
                 if (player.getWorld().getRegistryKey().equals(world.getRegistryKey())) {
-                    BlockPos spawnPoint = world.getSpawnPos();
-                    player.teleport(overworld, spawnPoint.getX() + 0.5, spawnPoint.getY(), spawnPoint.getZ() + 0.5, player.getYaw(), player.getPitch());
+                    BlockPos spawnPoint = player.getSpawnPointPosition();
+                    ServerWorld spawnDimension = server.getWorld(player.getSpawnPointDimension());
+                    if (spawnPoint == null) {
+                        spawnPoint = world.getSpawnPos();
+                        spawnDimension = overworld;
+                    }
+                    player.teleport(spawnDimension, spawnPoint.getX() + 0.5, spawnPoint.getY(), spawnPoint.getZ() + 0.5, player.getYaw(), player.getPitch());
                 }
-            printInfo("Recreating generation settings...", key);
-            WorldConfig.newSeed(key);
-            ((ThreadedAnvilChunkStorageAccessor) world.getChunkManager().threadedAnvilChunkStorage).resource_world$recreateGenerationSettings();
-            printInfo("Removing world data from disk...", key);
-            ((ThreadedAnvilChunkStorageAccessor) world.getChunkManager().threadedAnvilChunkStorage).resource_world$clearChunks();
+            printInfo(server, "Unloading world...", key);
             try {
-                Path path = server.getSavePath(RWDimensions.getDimensionFolder(world.getRegistryKey()));
+                world.close();
+            } catch (Exception e) {
+                printError("Failed to close world.", key, e);
+            }
+            printInfo(server, "Removing world data from disk...", key);
+            try {
+                Path path = server.getSavePath(ResourceDimensions.getDimensionFolder(world.getRegistryKey()));
                 FileUtils.cleanDirectory(path.resolve("entities").toFile());
                 FileUtils.cleanDirectory(path.resolve("poi").toFile());
                 FileUtils.cleanDirectory(path.resolve("region").toFile());
-                printInfo("Successfully remove world data.", key);
+                printInfo(server, "Successfully remove world data.", key);
             } catch (Exception e) {
-                printInfo("Failed to remove world data.", key, e);
+                printError("Failed to remove world data.", key, e);
             }
-            ((ThreadedAnvilChunkStorageAccessor) world.getChunkManager().threadedAnvilChunkStorage).resource_world$clearChunks();
-            printInfo("Reset complete!", key);
+            printInfo(server, "Creating new world...", key);
+            accessor.resource_world$recreateWorld(key);
+            printInfo(server, "Reset complete!", key);
             world.savingDisabled = false;
             RESETTING.remove(key);
         });
     }
 
-    private static void printInfo(String s, RegistryKey<World> world, Object... data) {
-        ResourceWorld.LOGGER.info("[Resource World] (World: %s) %s".formatted(world.getValue(), s), data);
+    private static void printInfo(MinecraftServer server, String s, RegistryKey<World> world) {
+        String string = "[Resource World] (World: %s) %s".formatted(world.getValue().getPath(), s);
+        ResourceWorld.LOGGER.info(string);
+        server.getPlayerManager().broadcast(Text.literal(string), false);
+    }
+
+    private static void printError(String s, RegistryKey<World> world, Object... data) {
+        ResourceWorld.LOGGER.info("[Resource World] (World: %s) %s".formatted(world.getValue().getPath(), s), data);
     }
 }

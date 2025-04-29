@@ -1,7 +1,8 @@
-package com.iafenvoy.resourceworld.data;
+package com.iafenvoy.resourceworld.config;
 
 import com.google.gson.JsonParser;
 import com.iafenvoy.resourceworld.ResourceWorld;
+import com.iafenvoy.resourceworld.data.ResourceDimensions;
 import com.mojang.serialization.JsonOps;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.MinecraftServer;
@@ -77,8 +78,8 @@ public class WorldConfig {
     }
 
     static {
-        BY_WORLD.put(RWDimensions.RESOURCE_WORLD, () -> DATA == null ? new SingleWorldData() : DATA.getWorld());
-        BY_WORLD.put(RWDimensions.RESOURCE_NETHER, () -> DATA == null ? new SingleWorldData() : DATA.getNether());
-        BY_WORLD.put(RWDimensions.RESOURCE_END, () -> DATA == null ? new SingleWorldData() : DATA.getEnd());
+        BY_WORLD.put(ResourceDimensions.RESOURCE_WORLD, () -> DATA == null ? new SingleWorldData() : DATA.getWorld());
+        BY_WORLD.put(ResourceDimensions.RESOURCE_NETHER, () -> DATA == null ? new SingleWorldData() : DATA.getNether());
+        BY_WORLD.put(ResourceDimensions.RESOURCE_END, () -> DATA == null ? new SingleWorldData() : DATA.getEnd());
     }
 }

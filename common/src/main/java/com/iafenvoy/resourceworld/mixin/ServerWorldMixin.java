@@ -2,7 +2,7 @@ package com.iafenvoy.resourceworld.mixin;
 
 import com.iafenvoy.resourceworld.MixinCache;
 import com.iafenvoy.resourceworld.ResourceWorld;
-import com.iafenvoy.resourceworld.data.WorldConfig;
+import com.iafenvoy.resourceworld.config.WorldConfig;
 import com.iafenvoy.resourceworld.data.WorldReset;
 import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.registry.RegistryKey;

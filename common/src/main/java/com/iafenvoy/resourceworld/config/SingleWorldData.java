@@ -1,4 +1,4 @@
-package com.iafenvoy.resourceworld.data;
+package com.iafenvoy.resourceworld.config;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;

@@ -1,6 +1,10 @@
 package com.iafenvoy.resourceworld;
 
+import com.iafenvoy.resourceworld.config.SingleWorldData;
+import com.iafenvoy.resourceworld.config.WorldConfig;
 import com.iafenvoy.resourceworld.data.*;
+import com.iafenvoy.resourceworld.data.PositionLocator;
+import com.iafenvoy.resourceworld.data.WorldReset;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -23,16 +27,16 @@ public final class ResourceCommand {
         dispatcher.register(literal("resource")
                 .then(literal("tp")
                         .requires(ServerCommandSource::isExecutedByPlayer)
-                        .then(literal("overworld").executes(ctx -> teleport(ctx, RWDimensions.RESOURCE_WORLD)))
-                        .then(literal("nether").executes(ctx -> teleport(ctx, RWDimensions.RESOURCE_NETHER)))
-                        .then(literal("end").executes(ctx -> teleport(ctx, RWDimensions.RESOURCE_END)))
-                        .executes(ctx -> teleport(ctx, RWDimensions.RESOURCE_WORLD))
+                        .then(literal("overworld").executes(ctx -> teleport(ctx, ResourceDimensions.RESOURCE_WORLD)))
+                        .then(literal("nether").executes(ctx -> teleport(ctx, ResourceDimensions.RESOURCE_NETHER)))
+                        .then(literal("end").executes(ctx -> teleport(ctx, ResourceDimensions.RESOURCE_END)))
+                        .executes(ctx -> teleport(ctx, ResourceDimensions.RESOURCE_WORLD))
                 ).then(literal("reset")
                         .requires(ctx -> ctx.hasPermissionLevel(4))
-                        .then(literal("overworld").executes(ctx -> resetWorld(ctx, RWDimensions.RESOURCE_WORLD)))
-                        .then(literal("nether").executes(ctx -> resetWorld(ctx, RWDimensions.RESOURCE_NETHER)))
-                        .then(literal("end").executes(ctx -> resetWorld(ctx, RWDimensions.RESOURCE_END)))
-                        .executes(ctx -> resetWorld(ctx, List.of(RWDimensions.RESOURCE_WORLD, RWDimensions.RESOURCE_NETHER, RWDimensions.RESOURCE_END)))
+                        .then(literal("overworld").executes(ctx -> resetWorld(ctx, ResourceDimensions.RESOURCE_WORLD)))
+                        .then(literal("nether").executes(ctx -> resetWorld(ctx, ResourceDimensions.RESOURCE_NETHER)))
+                        .then(literal("end").executes(ctx -> resetWorld(ctx, ResourceDimensions.RESOURCE_END)))
+                        .executes(ctx -> resetWorld(ctx, List.of(ResourceDimensions.RESOURCE_WORLD, ResourceDimensions.RESOURCE_NETHER, ResourceDimensions.RESOURCE_END)))
                 )
         );
     }
@@ -57,12 +61,13 @@ public final class ResourceCommand {
         ServerCommandSource source = ctx.getSource();
         MinecraftServer server = source.getServer();
         ServerWorld world = server.getWorld(key);
-        if (world == null) throw new CommandException(Text.literal("Cannot find world"));
+        if (world == null) return 0;
         WorldReset.reset(world);
-        return resetWorld(ctx, List.of(key));
+        return 1;
     }
 
     public static int resetWorld(CommandContext<ServerCommandSource> ctx, List<RegistryKey<World>> keys) {
+        for (RegistryKey<World> key : keys) resetWorld(ctx, key);
         return 1;
     }
 }

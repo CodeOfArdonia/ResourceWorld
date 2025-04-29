@@ -8,9 +8,9 @@
     "IAFEnvoy"
   ],
   "contact": {
-    "sources": "https://github.com/FabricMC/fabric-example-mod"
+    "sources": "https://github.com/IAFEnvoy/ResourceWorld"
   },
-  "license": "LGPL-3.0",
+  "license": "All Right Reserved",
   "icon": "assets/resource_world/icon.png",
   "environment": "*",
   "entrypoints": {

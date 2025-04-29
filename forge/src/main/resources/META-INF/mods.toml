@@ -1,15 +1,15 @@
 modLoader = "javafml"
 loaderVersion = "[47,)"
-#issueTrackerURL = ""
-license = "Insert License Here"
+issueTrackerURL = "https://github.com/IAFEnvoy/ResourceWorld/issues"
+license = "All Right Reserved"
 
 [[mods]]
 modId = "resource_world"
 version = "${version}"
 displayName = "Resource World"
-authors = "Me!"
+authors = "IAFEnvoy"
 description = '''
-This is an example description! Tell everyone what your mod is about!
+A server side mod to create resource worlds
 '''
 #logoFile = ""
 
@@ -23,13 +23,6 @@ side = "BOTH"
 [[dependencies.resource_world]]
 modId = "minecraft"
 mandatory = true
-versionRange = "[1.20.1,)"
+versionRange = "[1.20.1,1.20.5)"
 ordering = "NONE"
-side = "BOTH"
-
-[[dependencies.resource_world]]
-modId = "architectury"
-mandatory = true
-versionRange = "[9.2.14,)"
-ordering = "AFTER"
 side = "BOTH"

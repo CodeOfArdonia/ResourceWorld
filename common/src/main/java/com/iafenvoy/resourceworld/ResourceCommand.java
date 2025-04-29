@@ -42,6 +42,16 @@ public final class ResourceCommand {
                         .then(literal("nether").executes(ctx -> resetWorld(ctx, ResourceDimensions.RESOURCE_NETHER)))
                         .then(literal("end").executes(ctx -> resetWorld(ctx, ResourceDimensions.RESOURCE_END)))
                         .executes(ctx -> resetWorld(ctx, List.of(ResourceDimensions.RESOURCE_WORLD, ResourceDimensions.RESOURCE_NETHER, ResourceDimensions.RESOURCE_END)))
+                ).then(literal("enable")
+                        .requires(ctx -> ctx.hasPermissionLevel(4))
+                        .then(literal("overworld").executes(ctx -> setEnable(ctx, ResourceDimensions.RESOURCE_WORLD, true)))
+                        .then(literal("nether").executes(ctx -> setEnable(ctx, ResourceDimensions.RESOURCE_NETHER, true)))
+                        .then(literal("end").executes(ctx -> setEnable(ctx, ResourceDimensions.RESOURCE_END, true)))
+                ).then(literal("disable")
+                        .requires(ctx -> ctx.hasPermissionLevel(4))
+                        .then(literal("overworld").executes(ctx -> setEnable(ctx, ResourceDimensions.RESOURCE_WORLD, false)))
+                        .then(literal("nether").executes(ctx -> setEnable(ctx, ResourceDimensions.RESOURCE_NETHER, false)))
+                        .then(literal("end").executes(ctx -> setEnable(ctx, ResourceDimensions.RESOURCE_END, false)))
                 ));
     }
 
@@ -49,6 +59,10 @@ public final class ResourceCommand {
         SingleWorldData data = WorldConfig.getData(key);
         if (data == null) throw new CommandException(Text.literal("Unknown resource world key"));
         ServerCommandSource source = ctx.getSource();
+        if (!data.isEnabled()) {
+            source.sendError(Text.literal("This resource world is disabled"));
+            return 0;
+        }
         MinecraftServer server = source.getServer();
         ServerWorld world = server.getWorld(key);
         if (world == null) throw new CommandException(Text.literal("Cannot find world"));
@@ -78,6 +92,14 @@ public final class ResourceCommand {
 
     public static int resetWorld(CommandContext<ServerCommandSource> ctx, List<RegistryKey<World>> keys) {
         for (RegistryKey<World> key : keys) resetWorld(ctx, key);
+        return 1;
+    }
+
+    public static int setEnable(CommandContext<ServerCommandSource> ctx, RegistryKey<World> key, boolean enable) {
+        SingleWorldData data = WorldConfig.getData(key);
+        if (data == null) throw new CommandException(Text.literal("Unknown resource world key"));
+        data.setEnabled(enable);
+        ctx.getSource().sendFeedback(() -> Text.literal("Success!"), false);
         return 1;
     }
 }

@@ -31,7 +31,6 @@ public class WorldConfig {
 
     @ApiStatus.Internal
     public static void bootstrap(MinecraftServer server) {
-        ResourceGameRules.init();
         SERVER = server;
         try {
             DATA = ResourceWorldData.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(FileUtils.readFileToString(SERVER.getSavePath(RESOURCE_WORLD_DATA).toFile(), StandardCharsets.UTF_8))).resultOrPartial(ResourceWorld.LOGGER::error).orElseThrow();

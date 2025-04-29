@@ -15,4 +15,8 @@ public final class ResourceDimensions {
     public static WorldSavePath getDimensionFolder(RegistryKey<World> key) {
         return new WorldSavePath("dimensions/%s/%s".formatted(key.getValue().getNamespace(), key.getValue().getPath()));
     }
+
+    public static RegistryKey<World> toResourceWorldKey(RegistryKey<World> key) {
+        return RegistryKey.of(RegistryKeys.WORLD, Identifier.of(ResourceWorld.MOD_ID, key.getValue().getPath()));
+    }
 }

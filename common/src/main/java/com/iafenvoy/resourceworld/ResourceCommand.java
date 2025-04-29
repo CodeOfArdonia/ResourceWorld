@@ -1,13 +1,16 @@
 package com.iafenvoy.resourceworld;
 
+import com.iafenvoy.resourceworld.config.ResourceGameRules;
 import com.iafenvoy.resourceworld.config.SingleWorldData;
 import com.iafenvoy.resourceworld.config.WorldConfig;
-import com.iafenvoy.resourceworld.data.*;
 import com.iafenvoy.resourceworld.data.PositionLocator;
-import com.iafenvoy.resourceworld.data.WorldReset;
+import com.iafenvoy.resourceworld.data.ResourceDimensions;
+import com.iafenvoy.resourceworld.data.WorldResetHelper;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import it.unimi.dsi.fastutil.objects.Object2LongLinkedOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import net.minecraft.command.CommandException;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.MinecraftServer;
@@ -23,6 +26,8 @@ import java.util.List;
 import static net.minecraft.server.command.CommandManager.literal;
 
 public final class ResourceCommand {
+    private static final Object2LongMap<ServerPlayerEntity> COOLDOWNS = new Object2LongLinkedOpenHashMap<>();
+
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(literal("resource")
                 .then(literal("tp")
@@ -37,8 +42,7 @@ public final class ResourceCommand {
                         .then(literal("nether").executes(ctx -> resetWorld(ctx, ResourceDimensions.RESOURCE_NETHER)))
                         .then(literal("end").executes(ctx -> resetWorld(ctx, ResourceDimensions.RESOURCE_END)))
                         .executes(ctx -> resetWorld(ctx, List.of(ResourceDimensions.RESOURCE_WORLD, ResourceDimensions.RESOURCE_NETHER, ResourceDimensions.RESOURCE_END)))
-                )
-        );
+                ));
     }
 
     public static int teleport(CommandContext<ServerCommandSource> ctx, RegistryKey<World> key) throws CommandSyntaxException {
@@ -48,12 +52,18 @@ public final class ResourceCommand {
         MinecraftServer server = source.getServer();
         ServerWorld world = server.getWorld(key);
         if (world == null) throw new CommandException(Text.literal("Cannot find world"));
-        source.sendFeedback(() -> Text.literal("Finding vaild position, please wait..."), false);
+        ServerPlayerEntity player = source.getPlayerOrThrow();
+        long delta = COOLDOWNS.getOrDefault(player, 0) + world.getGameRules().getInt(ResourceGameRules.COOLDOWN_SECOND) * 1000L - System.currentTimeMillis();
+        if (delta > 0) {
+            source.sendError(Text.literal("Teleport cooldown, remaining time: %s seconds.".formatted(delta / 1000)));
+            return 0;
+        }
+        source.sendFeedback(() -> Text.literal("Finding valid position, please wait..."), false);
         BlockPos pos = PositionLocator.locate(world, data);
         if (pos == null)
             throw new CommandException(Text.literal("Cannot find valid location for teleport! (Retry or check config)"));
-        ServerPlayerEntity player = source.getPlayerOrThrow();
         player.teleport(world, pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, player.getYaw(), player.getPitch());
+        COOLDOWNS.put(player, System.currentTimeMillis());
         return 1;
     }
 
@@ -62,7 +72,7 @@ public final class ResourceCommand {
         MinecraftServer server = source.getServer();
         ServerWorld world = server.getWorld(key);
         if (world == null) return 0;
-        WorldReset.reset(world);
+        WorldResetHelper.reset(world);
         return 1;
     }
 

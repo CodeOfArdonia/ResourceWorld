@@ -9,6 +9,7 @@
     "CommandManagerMixin",
     "LevelPropertiesMixin",
     "MinecraftServerMixin",
+    "ServerPlayerEntityMixin",
     "ServerWorldMixin",
     "WorldBorderMixin"
   ],

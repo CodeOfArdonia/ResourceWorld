@@ -6,8 +6,4 @@ import org.slf4j.Logger;
 public final class ResourceWorld {
     public static final String MOD_ID = "resource_world";
     public static final Logger LOGGER = LogUtils.getLogger();
-
-    public static void init() {
-        // Write common init code here.
-    }
 }

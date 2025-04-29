@@ -3,7 +3,7 @@ package com.iafenvoy.resourceworld.mixin;
 import com.iafenvoy.resourceworld.MixinCache;
 import com.iafenvoy.resourceworld.ResourceWorld;
 import com.iafenvoy.resourceworld.config.WorldConfig;
-import com.iafenvoy.resourceworld.data.WorldReset;
+import com.iafenvoy.resourceworld.data.WorldResetHelper;
 import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.entry.RegistryEntry;
@@ -34,7 +34,7 @@ public abstract class ServerWorldMixin extends World {
 
     @Inject(method = "save", at = @At("HEAD"), cancellable = true)
     private void cancelSaveWhenReset(CallbackInfo ci) {
-        if (WorldReset.RESETTING.contains(this.getRegistryKey())) {
+        if (WorldResetHelper.RESETTING.contains(this.getRegistryKey())) {
             ResourceWorld.LOGGER.warn("Cancelled saving due to resource world reset");
             ci.cancel();
         }
@@ -42,7 +42,7 @@ public abstract class ServerWorldMixin extends World {
 
     @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
     private void beforeTick(CallbackInfo ci) {
-        if (WorldReset.RESETTING.contains(this.getRegistryKey())) ci.cancel();
+        if (WorldResetHelper.RESETTING.contains(this.getRegistryKey())) ci.cancel();
         else MixinCache.CURRENT_TICKING_WORLD = this.getRegistryKey();
     }
 

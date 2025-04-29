@@ -17,17 +17,17 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 
-public final class WorldReset {
+public final class WorldResetHelper {
     public static final Set<RegistryKey<World>> RESETTING = new HashSet<>();
 
     public static void reset(ServerWorld world) {
         if (WorldConfig.getData(world.getRegistryKey()) == null) return;
         RegistryKey<World> key = world.getRegistryKey();
+        if (RESETTING.contains(key)) return;
+        RESETTING.add(key);
         MinecraftServer server = world.getServer();
         printInfo(server, "Reset in 3 seconds.", key);
         Timeout.create(60, () -> {
-            if (RESETTING.contains(key)) return;
-            RESETTING.add(key);
             WorldConfig.newSeed(key);
             world.savingDisabled = true;
             MinecraftServerAccessor accessor = (MinecraftServerAccessor) server;

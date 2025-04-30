@@ -38,7 +38,7 @@ public final class WorldResetHelper {
                     BlockPos spawnPoint = player.getSpawnPointPosition();
                     ServerWorld spawnDimension = server.getWorld(player.getSpawnPointDimension());
                     if (spawnPoint == null) {
-                        spawnPoint = world.getSpawnPos();
+                        spawnPoint = overworld.getSpawnPos();
                         spawnDimension = overworld;
                     }
                     player.teleport(spawnDimension, spawnPoint.getX() + 0.5, spawnPoint.getY(), spawnPoint.getZ() + 0.5, player.getYaw(), player.getPitch());

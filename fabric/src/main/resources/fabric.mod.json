@@ -11,10 +11,11 @@
     "sources": "https://github.com/IAFEnvoy/ResourceWorld"
   },
   "license": "All Right Reserved",
-  "icon": "assets/resource_world/icon.png",
+  "icon": "logo.png",
   "environment": "*",
   "entrypoints": {
   },
+  "accessWidener": "resource_world.accesswidener",
   "mixins": [
     "resource_world.mixins.json"
   ],

@@ -73,7 +73,7 @@ public abstract class MinecraftServerMixin extends ThreadExecutor<ServerTask> im
     }
 
     @Override
-    public void resource_world$recreateWorld(RegistryKey<World> key) {
+    public void resource_world$createWorld(RegistryKey<World> key) {
         ServerWorldProperties serverWorldProperties = this.saveProperties.getMainWorldProperties();
         boolean bl = this.saveProperties.isDebugWorld();
         Registry<DimensionOptions> registry = this.combinedDynamicRegistries.getCombinedRegistryManager().get(RegistryKeys.DIMENSION);

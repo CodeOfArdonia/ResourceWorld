@@ -60,7 +60,7 @@ public final class WorldResetHelper {
                 printError("Failed to remove world data.", key, e);
             }
             printInfo(server, "Creating new world...", key);
-            accessor.resource_world$recreateWorld(key);
+            accessor.resource_world$createWorld(key);
             printInfo(server, "Reset complete!", key);
             world.savingDisabled = false;
             RESETTING.remove(key);

@@ -11,7 +11,7 @@ authors = "IAFEnvoy"
 description = '''
 A server side mod to create resource worlds
 '''
-#logoFile = ""
+logoFile = "logo.png"
 
 [[dependencies.resource_world]]
 modId = "forge"

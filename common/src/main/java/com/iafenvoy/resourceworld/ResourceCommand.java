@@ -7,6 +7,7 @@ import com.iafenvoy.resourceworld.data.PositionLocator;
 import com.iafenvoy.resourceworld.data.ResourceWorldHelper;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.LongArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -54,7 +55,8 @@ public final class ResourceCommand {
                         .then(argument("world", StringArgumentType.word())
                                 .then(argument("target", IdentifierArgumentType.identifier())
                                         .suggests(DIMENSIONS)
-                                        .executes(ResourceCommand::createWorld)
+                                        .then(argument("seed", LongArgumentType.longArg()).executes(ctx -> createWorld(ctx, LongArgumentType.getLong(ctx, "seed"))))
+                                        .executes(ctx -> createWorld(ctx, 0))
                                 )))
                 .then(literal("reset")
                         .requires(ctx -> ctx.hasPermissionLevel(4))
@@ -149,10 +151,12 @@ public final class ResourceCommand {
         return 1;
     }
 
-    private static int createWorld(CommandContext<ServerCommandSource> ctx) {
+    private static int createWorld(CommandContext<ServerCommandSource> ctx, long seed) {
         String id = StringArgumentType.getString(ctx, "world");
+        if (WorldConfig.get(ResourceWorldHelper.toRegistryKey(id)) != null)
+            throw new CommandException(Text.literal("This world id has been used!"));
         Identifier target = IdentifierArgumentType.getIdentifier(ctx, "target");
-        if (ResourceWorldHelper.createWorld(ctx.getSource().getServer(), ResourceWorldHelper.toRegistryKey(id), target))
+        if (ResourceWorldHelper.createWorld(ctx.getSource().getServer(), ResourceWorldHelper.toRegistryKey(id), target, seed))
             ctx.getSource().sendFeedback(() -> Text.literal("Success!"), false);
         return 1;
     }

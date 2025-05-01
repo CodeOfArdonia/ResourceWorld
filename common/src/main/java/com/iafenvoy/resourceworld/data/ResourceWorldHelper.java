@@ -40,9 +40,10 @@ public class ResourceWorldHelper {
         return new WorldSavePath("dimensions/%s/%s".formatted(key.getValue().getNamespace(), key.getValue().getPath()));
     }
 
-    public static boolean createWorld(MinecraftServer server, RegistryKey<World> key, Identifier worldOption) {
-        WorldConfig.create(resolveId(key), worldOption);
-        WorldConfig.newSeed(key);
+    public static boolean createWorld(MinecraftServer server, RegistryKey<World> key, Identifier worldOption, long seed) {
+        ResourceWorldData data = WorldConfig.create(resolveId(key), worldOption);
+        if (seed != 0) data.setSeed(seed);
+        else WorldConfig.newSeed(key);
         return recreateWorld(server, key, worldOption);
     }
 

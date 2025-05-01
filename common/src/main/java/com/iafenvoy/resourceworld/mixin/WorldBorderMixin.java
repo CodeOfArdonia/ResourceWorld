@@ -1,7 +1,7 @@
 package com.iafenvoy.resourceworld.mixin;
 
 import com.iafenvoy.resourceworld.MixinCache;
-import com.iafenvoy.resourceworld.config.SingleWorldData;
+import com.iafenvoy.resourceworld.config.ResourceWorldData;
 import com.iafenvoy.resourceworld.config.WorldConfig;
 import net.minecraft.world.border.WorldBorder;
 import org.spongepowered.asm.mixin.Mixin;
@@ -21,7 +21,7 @@ public abstract class WorldBorderMixin {
     @Inject(method = "tick", at = @At("HEAD"))
     private void forceSetBorder(CallbackInfo ci) {
         if (MixinCache.CURRENT_TICKING_WORLD == null) return;
-        SingleWorldData data = WorldConfig.getData(MixinCache.CURRENT_TICKING_WORLD);
+        ResourceWorldData data = WorldConfig.get(MixinCache.CURRENT_TICKING_WORLD);
         if (data == null) return;
         this.setCenter(data.getCenterX(), data.getCenterZ());
         this.setSize(data.getRange() * 2);

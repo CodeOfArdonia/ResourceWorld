@@ -2,10 +2,14 @@ package com.iafenvoy.resourceworld.config;
 
 import com.google.gson.JsonParser;
 import com.iafenvoy.resourceworld.ResourceWorld;
-import com.iafenvoy.resourceworld.data.ResourceDimensions;
+import com.iafenvoy.resourceworld.data.ResourceWorldHelper;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.WorldSavePath;
 import net.minecraft.world.World;
 import org.apache.commons.io.FileUtils;
@@ -18,31 +22,39 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
-import java.util.function.Supplier;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.BiConsumer;
 
 public class WorldConfig {
+    private static final Codec<Map<String, ResourceWorldData>> CODEC = Codec.unboundedMap(Codec.STRING, ResourceWorldData.CODEC);
     private static final WorldSavePath RESOURCE_WORLD_DATA = new WorldSavePath("resource_world.json");
     private static final Random RANDOM = new Random();
-    private static final Map<RegistryKey<World>, Supplier<SingleWorldData>> BY_WORLD = new HashMap<>();
+    private static final Map<String, ResourceWorldData> DATA = new HashMap<>();
     @Nullable
     private static MinecraftServer SERVER;
-    @Nullable
-    private static ResourceWorldData DATA;
 
     @ApiStatus.Internal
     public static void bootstrap(MinecraftServer server) {
         SERVER = server;
+        DATA.clear();
         try {
-            DATA = ResourceWorldData.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(FileUtils.readFileToString(SERVER.getSavePath(RESOURCE_WORLD_DATA).toFile(), StandardCharsets.UTF_8))).resultOrPartial(ResourceWorld.LOGGER::error).orElseThrow();
+            DATA.putAll(CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(FileUtils.readFileToString(server.getSavePath(RESOURCE_WORLD_DATA).toFile(), StandardCharsets.UTF_8))).resultOrPartial(ResourceWorld.LOGGER::error).orElseThrow());
         } catch (FileNotFoundException e) {
-            DATA = new ResourceWorldData();
-            DATA.getWorld().setSeed(randomSeed());
-            DATA.getNether().setSeed(randomSeed());
-            DATA.getEnd().setSeed(randomSeed());
             saveConfig();
         } catch (Exception e) {
             ResourceWorld.LOGGER.error("Failed to load config", e);
         }
+    }
+
+    @ApiStatus.Internal
+    public static void initResourceWorld(BiConsumer<RegistryKey<World>, Identifier> consumer) {
+        for (Map.Entry<String, ResourceWorldData> entry : DATA.entrySet())
+            consumer.accept(ResourceWorldHelper.toRegistryKey(entry.getKey()), entry.getValue().getTargetWorld());
+    }
+
+    public static CompletableFuture<Suggestions> appendSuggestions(SuggestionsBuilder builder) {
+        DATA.keySet().forEach(builder::suggest);
+        return builder.buildFuture();
     }
 
     @ApiStatus.Internal
@@ -51,17 +63,30 @@ public class WorldConfig {
         SERVER = null;
     }
 
+    public static ResourceWorldData create(String id, Identifier target) {
+        ResourceWorldData data = new ResourceWorldData(target);
+        data.setEnabled(true);
+        DATA.put(id, data);
+        saveConfig();
+        return data;
+    }
+
     @Nullable
-    public static SingleWorldData getData(RegistryKey<World> key) {
-        return Optional.ofNullable(BY_WORLD.get(key)).map(Supplier::get).orElse(null);
+    public static ResourceWorldData get(RegistryKey<World> key) {
+        return DATA.get(ResourceWorldHelper.resolveId(key));
+    }
+
+    public static void remove(RegistryKey<World> key) {
+        DATA.remove(ResourceWorldHelper.resolveId(key));
+        saveConfig();
     }
 
     public static long getSeed(RegistryKey<World> key) {
-        return Optional.ofNullable(BY_WORLD.get(key)).map(Supplier::get).map(SingleWorldData::getSeed).orElse(0L);
+        return Optional.ofNullable(get(key)).map(ResourceWorldData::getSeed).orElse(0L);
     }
 
     public static void newSeed(RegistryKey<World> key) {
-        Optional.ofNullable(BY_WORLD.get(key)).ifPresent(x -> x.get().setSeed(randomSeed()));
+        Optional.ofNullable(get(key)).ifPresent(x -> x.setSeed(randomSeed()));
     }
 
     public static boolean shouldHideSeed() {
@@ -75,15 +100,9 @@ public class WorldConfig {
     private static void saveConfig() {
         if (SERVER == null) return;
         try {
-            FileUtils.write(SERVER.getSavePath(RESOURCE_WORLD_DATA).toFile(), ResourceWorldData.CODEC.encodeStart(JsonOps.INSTANCE, DATA).resultOrPartial(ResourceWorld.LOGGER::error).orElseThrow().toString(), StandardCharsets.UTF_8);
+            FileUtils.write(SERVER.getSavePath(RESOURCE_WORLD_DATA).toFile(), CODEC.encodeStart(JsonOps.INSTANCE, DATA).resultOrPartial(ResourceWorld.LOGGER::error).orElseThrow().toString(), StandardCharsets.UTF_8);
         } catch (Exception ex) {
             ResourceWorld.LOGGER.error("Failed to create config", ex);
         }
-    }
-
-    static {
-        BY_WORLD.put(ResourceDimensions.RESOURCE_WORLD, () -> DATA == null ? new SingleWorldData() : DATA.getWorld());
-        BY_WORLD.put(ResourceDimensions.RESOURCE_NETHER, () -> DATA == null ? new SingleWorldData() : DATA.getNether());
-        BY_WORLD.put(ResourceDimensions.RESOURCE_END, () -> DATA == null ? new SingleWorldData() : DATA.getEnd());
     }
 }

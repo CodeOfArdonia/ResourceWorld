@@ -26,6 +26,6 @@ public class PlayerRespawnS2CPacketMixin {
 
     @Inject(method = "write", at = @At("HEAD"))
     private void injectEmptyHashedSeed(PacketByteBuf buf, CallbackInfo ci) {
-        if (WorldConfig.getData(this.dimension) != null && WorldConfig.shouldHideSeed()) this.sha256Seed = 0;
+        if (WorldConfig.get(this.dimension) != null && WorldConfig.shouldHideSeed()) this.sha256Seed = 0;
     }
 }

@@ -1,10 +1,9 @@
 package com.iafenvoy.resourceworld.data;
 
 import com.iafenvoy.resourceworld.ResourceWorld;
+import com.iafenvoy.resourceworld.accessor.MinecraftServerAccessor;
 import com.iafenvoy.resourceworld.config.ResourceWorldData;
 import com.iafenvoy.resourceworld.config.WorldConfig;
-import com.iafenvoy.resourceworld.util.MinecraftServerAccessor;
-import com.iafenvoy.resourceworld.util.Timeout;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.MinecraftServer;
@@ -20,6 +19,7 @@ import org.apache.commons.io.FileUtils;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 public class ResourceWorldHelper {
     public static final Set<RegistryKey<World>> RESETTING = new HashSet<>();
@@ -67,9 +67,11 @@ public class ResourceWorldHelper {
     }
 
     public static void deleteWorld(MinecraftServer server, ServerWorld world) {
-        ResourceWorldHelper.unloadAndDelete(world);
         WorldConfig.remove(world.getRegistryKey());
-        Timeout.create(0, () -> ((MinecraftServerAccessor) server).resource_world$getWorlds().remove(world.getRegistryKey()));
+        CompletableFuture.runAsync(() -> {
+            unloadAndDelete(world);
+            server.execute(() -> ((MinecraftServerAccessor) server).resource_world$getWorlds().remove(world.getRegistryKey()));
+        });
     }
 
     public static void reset(ServerWorld world) {
@@ -79,28 +81,37 @@ public class ResourceWorldHelper {
         if (RESETTING.contains(key)) return;
         RESETTING.add(key);
         MinecraftServer server = world.getServer();
-        printInfo(server, "Reset in 3 seconds.", key);
-        Timeout.create(60, () -> {
+        CompletableFuture.runAsync(() -> {
             WorldConfig.newSeed(key);
             unloadAndDelete(world);
             printInfo(server, "Creating new world...", key);
-            recreateWorld(server, key, data.getTargetWorld());
-            printInfo(server, "Reset complete!", key);
-            world.savingDisabled = false;
-            RESETTING.remove(key);
+            server.execute(() -> {
+                recreateWorld(server, key, data.getTargetWorld());
+                printInfo(server, "Reset complete!", key);
+                world.savingDisabled = false;
+                RESETTING.remove(key);
+            });
         });
     }
 
     private static void deleteWorldData(MinecraftServer server, RegistryKey<World> key) {
+        Path path = server.getSavePath(getDimensionFolder(key));
         try {
-            Path path = server.getSavePath(getDimensionFolder(key));
             FileUtils.cleanDirectory(path.resolve("region").toFile());
-            FileUtils.cleanDirectory(path.resolve("entities").toFile());
-            FileUtils.cleanDirectory(path.resolve("poi").toFile());
-            printInfo(server, "Successfully remove world data.", key);
         } catch (Exception e) {
-            printError("Failed to remove world data.", key, e);
+            printError("Failed to remove region data.", key, e);
         }
+        try {
+            FileUtils.cleanDirectory(path.resolve("entities").toFile());
+        } catch (Exception e) {
+            printError("Failed to remove entities data.", key, e);
+        }
+        try {
+            FileUtils.cleanDirectory(path.resolve("poi").toFile());
+        } catch (Exception e) {
+            printError("Failed to remove poi data.", key, e);
+        }
+        printInfo(server, "Successfully remove world data.", key);
     }
 
     private static void unloadAndDelete(ServerWorld world) {

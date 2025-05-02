@@ -40,7 +40,7 @@ public final class ResourceCommand {
     private static final Object2LongMap<String> DELETE_CONFIRM = new Object2LongLinkedOpenHashMap<>();
 
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        dispatcher.register(literal("resource")
+        dispatcher.register(literal("resourceworld")
                 .then(literal("home")
                         .requires(ServerCommandSource::isExecutedByPlayer)
                         .executes(ResourceCommand::home))
@@ -124,10 +124,12 @@ public final class ResourceCommand {
 
     private static int teleport(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
         RegistryKey<World> key = ResourceWorldHelper.toRegistryKey(StringArgumentType.getString(ctx, "world"));
-        ResourceWorldData data = WorldConfig.get(key);
-        if (data == null) throw new CommandException(Text.literal("Unknown resource world key"));
         if (ResourceWorldHelper.isNotResourceWorld(key))
             throw new CommandException(Text.literal("This is not a resource world!"));
+        if (ResourceWorldHelper.RESETTING.contains(key))
+            throw new CommandException(Text.literal("Resource world is resetting, please wait."));
+        ResourceWorldData data = WorldConfig.get(key);
+        if (data == null) throw new CommandException(Text.literal("Unknown resource world key"));
         ServerCommandSource source = ctx.getSource();
         if (!data.isEnabled()) {
             source.sendError(Text.literal("This resource world is disabled"));

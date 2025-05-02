@@ -3,8 +3,7 @@ package com.iafenvoy.resourceworld.mixin;
 import com.google.common.collect.ImmutableList;
 import com.iafenvoy.resourceworld.ResourceWorld;
 import com.iafenvoy.resourceworld.config.WorldConfig;
-import com.iafenvoy.resourceworld.util.MinecraftServerAccessor;
-import com.iafenvoy.resourceworld.util.Timeout;
+import com.iafenvoy.resourceworld.accessor.MinecraftServerAccessor;
 import net.minecraft.client.gui.WorldGenerationProgressTracker;
 import net.minecraft.registry.*;
 import net.minecraft.server.MinecraftServer;
@@ -72,11 +71,6 @@ public abstract class MinecraftServerMixin extends ThreadExecutor<ServerTask> im
     @Inject(method = "stop", at = @At("HEAD"))
     private void onServerStop(CallbackInfo ci) {
         WorldConfig.stop();
-    }
-
-    @Inject(method = "tick", at = @At("RETURN"))
-    private void onTick(CallbackInfo ci) {
-        Timeout.runTimeout((MinecraftServer) (Object) this);
     }
 
     @Override

@@ -1,4 +1,4 @@
-package com.iafenvoy.resourceworld.util;
+package com.iafenvoy.resourceworld.accessor;
 
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.world.ServerWorld;

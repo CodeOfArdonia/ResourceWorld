@@ -1,6 +1,6 @@
 package com.iafenvoy.resourceworld.mixin;
 
-import com.iafenvoy.resourceworld.util.ServerPlayerEntityAccessor;
+import com.iafenvoy.resourceworld.accessor.ServerPlayerEntityAccessor;
 import net.minecraft.network.packet.c2s.play.ClientSettingsC2SPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.spongepowered.asm.mixin.Mixin;

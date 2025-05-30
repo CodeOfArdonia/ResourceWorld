@@ -4,6 +4,12 @@ This mod can create resource worlds. These worlds can reset standalone from main
 
 **Logically support modded dimensions.**
 
+## Features
+
+- Create separated resource worlds from any exists dimensions
+- Standalone seeds, game rules, difficulties and world borders
+- Reset standalone
+
 ## GameRules
 
 - `resource_world:tp_cooldown_seconds`: `/resourceworld tp` command cooldown for players.

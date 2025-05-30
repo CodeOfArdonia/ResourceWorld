@@ -9,6 +9,8 @@ import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.profiler.Profiler;
+import net.minecraft.world.Difficulty;
+import net.minecraft.world.GameRules;
 import net.minecraft.world.MutableWorldProperties;
 import net.minecraft.world.World;
 import net.minecraft.world.dimension.DimensionType;
@@ -49,5 +51,15 @@ public abstract class ServerWorldMixin extends World {
     @Inject(method = "tick", at = @At("RETURN"))
     private void afterTick(CallbackInfo ci) {
         MixinCache.CURRENT_TICKING_WORLD = null;
+    }
+
+    @Override
+    public GameRules getGameRules() {
+        return WorldConfig.getGameRules(this.getRegistryKey()).orElse(super.getGameRules());
+    }
+
+    @Override
+    public Difficulty getDifficulty() {
+        return WorldConfig.getDifficulty(this.getRegistryKey()).orElse(super.getDifficulty());
     }
 }

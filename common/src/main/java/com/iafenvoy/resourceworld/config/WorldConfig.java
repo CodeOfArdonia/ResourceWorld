@@ -11,6 +11,8 @@ import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.WorldSavePath;
+import net.minecraft.world.Difficulty;
+import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.ApiStatus;
@@ -85,6 +87,14 @@ public class WorldConfig {
         return Optional.ofNullable(get(key)).map(ResourceWorldData::getSeed).orElse(0L);
     }
 
+    public static Optional<GameRules> getGameRules(RegistryKey<World> key) {
+        return Optional.ofNullable(get(key)).map(ResourceWorldData::getGameRules);
+    }
+
+    public static Optional<Difficulty> getDifficulty(RegistryKey<World> key) {
+        return Optional.ofNullable(get(key)).map(ResourceWorldData::getDifficulty);
+    }
+
     public static void newSeed(RegistryKey<World> key) {
         Optional.ofNullable(get(key)).ifPresent(x -> x.setSeed(randomSeed()));
     }
@@ -97,7 +107,7 @@ public class WorldConfig {
         return RANDOM.nextLong();
     }
 
-    private static void saveConfig() {
+    public static void saveConfig() {
         if (SERVER == null) return;
         try {
             FileUtils.write(SERVER.getSavePath(RESOURCE_WORLD_DATA).toFile(), CODEC.encodeStart(JsonOps.INSTANCE, DATA).resultOrPartial(ResourceWorld.LOGGER::error).orElseThrow().toString(), StandardCharsets.UTF_8);

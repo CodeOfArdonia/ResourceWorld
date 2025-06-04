@@ -5,6 +5,7 @@ import com.iafenvoy.resourceworld.config.ResourceWorldData;
 import com.iafenvoy.resourceworld.config.WorldConfig;
 import com.iafenvoy.resourceworld.data.PositionLocator;
 import com.iafenvoy.resourceworld.data.ResourceWorldHelper;
+import com.iafenvoy.server.i18n.ServerI18n;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.LongArgumentType;
@@ -25,7 +26,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -109,7 +109,7 @@ public final class ResourceCommand {
         ServerCommandSource source = ctx.getSource();
         ServerPlayerEntity player = source.getPlayerOrThrow();
         if (ResourceWorldHelper.isNotResourceWorld(player.getWorld().getRegistryKey()))
-            throw new CommandException(Text.literal("This is not a resource world!"));
+            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world"));
         MinecraftServer server = source.getServer();
         ServerWorld overworld = server.getOverworld();
         BlockPos spawnPoint = player.getSpawnPointPosition();
@@ -123,119 +123,132 @@ public final class ResourceCommand {
     }
 
     private static int teleport(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
+        ServerCommandSource source = ctx.getSource();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         RegistryKey<World> key = ResourceWorldHelper.toRegistryKey(StringArgumentType.getString(ctx, "world"));
         if (ResourceWorldHelper.isNotResourceWorld(key))
-            throw new CommandException(Text.literal("This is not a resource world!"));
+            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world"));
         if (ResourceWorldHelper.RESETTING.contains(key))
-            throw new CommandException(Text.literal("Resource world is resetting, please wait."));
+            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.resetting"));
         ResourceWorldData data = WorldConfig.get(key);
-        if (data == null) throw new CommandException(Text.literal("Unknown resource world key"));
-        ServerCommandSource source = ctx.getSource();
+        if (data == null)
+            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world"));
         if (!data.isEnabled()) {
-            source.sendError(Text.literal("This resource world is disabled"));
+            source.sendError(ServerI18n.translateToLiteral(source, "message.resource_world.disabled"));
             return 0;
         }
         MinecraftServer server = source.getServer();
         ServerWorld world = server.getWorld(key);
-        if (world == null) throw new CommandException(Text.literal("Cannot find world"));
-        ServerPlayerEntity player = source.getPlayerOrThrow();
+        if (world == null)
+            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world"));
         long delta = COOLDOWNS.getOrDefault(player, 0) + world.getGameRules().getInt(ResourceGameRules.COOLDOWN_SECOND) * 1000L - System.currentTimeMillis();
         if (delta > 0) {
-            source.sendError(Text.literal("Teleport cooldown, remaining time: %s seconds.".formatted(delta / 1000)));
+            source.sendError(ServerI18n.translateToLiteral("message.resource_world.teleport_cooldown", String.valueOf(delta / 1000)));
             return 0;
         }
-        source.sendFeedback(() -> Text.literal("Finding valid position, please wait..."), false);
+        source.sendMessage(ServerI18n.translateToLiteral(source, "message.resource_world.finding_position"));
         BlockPos pos = PositionLocator.locate(world, data);
         if (pos == null)
-            throw new CommandException(Text.literal("Cannot find valid location for teleport! (Retry or check config)"));
+            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.cannot_find_position"));
         player.teleport(world, pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, player.getYaw(), player.getPitch());
         COOLDOWNS.put(player, System.currentTimeMillis());
         return 1;
     }
 
-    private static int createWorld(CommandContext<ServerCommandSource> ctx, long seed) {
+    private static int createWorld(CommandContext<ServerCommandSource> ctx, long seed) throws CommandSyntaxException {
         String id = StringArgumentType.getString(ctx, "world");
+        ServerCommandSource source = ctx.getSource();
         if (WorldConfig.get(ResourceWorldHelper.toRegistryKey(id)) != null)
-            throw new CommandException(Text.literal("This world id has been used!"));
+            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.duplicate_id"));
         Identifier target = IdentifierArgumentType.getIdentifier(ctx, "target");
         if (ResourceWorldHelper.createWorld(ctx.getSource().getServer(), ResourceWorldHelper.toRegistryKey(id), target, seed))
-            ctx.getSource().sendFeedback(() -> Text.literal("Success!"), false);
+            source.sendMessage(ServerI18n.translateToLiteral(source, "message.resource_world.success"));
         return 1;
     }
 
-    private static int resetWorld(CommandContext<ServerCommandSource> ctx) {
+    private static int resetWorld(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
         RegistryKey<World> key = ResourceWorldHelper.toRegistryKey(StringArgumentType.getString(ctx, "world"));
-        if (ResourceWorldHelper.isNotResourceWorld(key))
-            throw new CommandException(Text.literal("This is not a resource world!"));
         ServerCommandSource source = ctx.getSource();
+        if (ResourceWorldHelper.isNotResourceWorld(key))
+            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world"));
         MinecraftServer server = source.getServer();
         ServerWorld world = server.getWorld(key);
-        if (world == null) throw new CommandException(Text.literal("Unknown resource world key"));
+        if (world == null)
+            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world"));
         ResourceWorldHelper.reset(world);
         return 1;
     }
 
-    private static int deleteWorld(CommandContext<ServerCommandSource> ctx) {
+    private static int deleteWorld(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
         RegistryKey<World> key = ResourceWorldHelper.toRegistryKey(StringArgumentType.getString(ctx, "world"));
-        if (ResourceWorldHelper.isNotResourceWorld(key))
-            throw new CommandException(Text.literal("This is not a resource world!"));
         ServerCommandSource source = ctx.getSource();
+        if (ResourceWorldHelper.isNotResourceWorld(key))
+            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world"));
         MinecraftServer server = source.getServer();
         ServerWorld world = server.getWorld(key);
-        if (world == null) throw new CommandException(Text.literal("Unknown resource world key"));
+        if (world == null)
+            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world"));
         String id = ResourceWorldHelper.resolveId(world.getRegistryKey());
         if (DELETE_CONFIRM.containsKey(id) && DELETE_CONFIRM.getLong(id) + 60 * 1000 >= System.currentTimeMillis()) {
             ResourceWorldHelper.deleteWorld(server, world);
-            source.sendFeedback(() -> Text.literal("Success!"), false);
+            source.sendMessage(ServerI18n.translateToLiteral(source, "message.resource_world.success"));
             DELETE_CONFIRM.removeLong(id);
         } else {
             DELETE_CONFIRM.put(id, System.currentTimeMillis());
-            source.sendFeedback(() -> Text.literal("Type again in 60s to confirm deletion"), false);
+            source.sendMessage(ServerI18n.translateToLiteral(source, "message.resource_world.confirm_in_60s"));
         }
         return 1;
     }
 
-    private static int setEnable(CommandContext<ServerCommandSource> ctx, boolean enable) {
+    private static int setEnable(CommandContext<ServerCommandSource> ctx, boolean enable) throws CommandSyntaxException {
         RegistryKey<World> key = ResourceWorldHelper.toRegistryKey(StringArgumentType.getString(ctx, "world"));
+        ServerCommandSource source = ctx.getSource();
         if (ResourceWorldHelper.isNotResourceWorld(key))
-            throw new CommandException(Text.literal("This is not a resource world!"));
+            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world"));
         ResourceWorldData data = WorldConfig.get(key);
-        if (data == null) throw new CommandException(Text.literal("Unknown resource world key"));
+        if (data == null)
+            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world"));
         data.setEnabled(enable);
-        ctx.getSource().sendFeedback(() -> Text.literal("Success!"), false);
+        source.sendMessage(ServerI18n.translateToLiteral(source, "message.resource_world.success"));
         return 1;
     }
 
-    private static int getRange(CommandContext<ServerCommandSource> ctx) {
+    private static int getRange(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
         RegistryKey<World> key = ResourceWorldHelper.toRegistryKey(StringArgumentType.getString(ctx, "world"));
+        ServerCommandSource source = ctx.getSource();
         if (ResourceWorldHelper.isNotResourceWorld(key))
-            throw new CommandException(Text.literal("This is not a resource world!"));
+            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world"));
         ResourceWorldData data = WorldConfig.get(key);
-        if (data == null) throw new CommandException(Text.literal("Unknown resource world key"));
-        ctx.getSource().sendFeedback(() -> Text.literal("Center: x=%s, z=%s | Range: %s".formatted(data.getCenterX(), data.getCenterZ(), data.getRange())), false);
+        if (data == null)
+            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world"));
+        source.sendMessage(ServerI18n.translateToLiteral(source, "message.resource_world.range_info", String.valueOf(data.getCenterX()), String.valueOf(data.getCenterZ()), String.valueOf(data.getCenterZ())));
         return 1;
     }
 
-    private static int setRange(CommandContext<ServerCommandSource> ctx) {
+    private static int setRange(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
         RegistryKey<World> key = ResourceWorldHelper.toRegistryKey(StringArgumentType.getString(ctx, "world"));
+        ServerCommandSource source = ctx.getSource();
         if (ResourceWorldHelper.isNotResourceWorld(key))
-            throw new CommandException(Text.literal("This is not a resource world!"));
+            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world"));
         ResourceWorldData data = WorldConfig.get(key);
-        if (data == null) throw new CommandException(Text.literal("Unknown resource world key"));
+        if (data == null)
+            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world"));
         data.setRange(IntegerArgumentType.getInteger(ctx, "range"));
-        ctx.getSource().sendFeedback(() -> Text.literal("Success!"), false);
+        source.sendMessage(ServerI18n.translateToLiteral(source, "message.resource_world.success"));
         return 1;
     }
 
-    private static int setCenter(CommandContext<ServerCommandSource> ctx) {
+    private static int setCenter(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
         RegistryKey<World> key = ResourceWorldHelper.toRegistryKey(StringArgumentType.getString(ctx, "world"));
+        ServerCommandSource source = ctx.getSource();
         if (ResourceWorldHelper.isNotResourceWorld(key))
-            throw new CommandException(Text.literal("This is not a resource world!"));
+            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world"));
         ResourceWorldData data = WorldConfig.get(key);
-        if (data == null) throw new CommandException(Text.literal("Unknown resource world key"));
+        if (data == null)
+            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world"));
         data.setCenterX(IntegerArgumentType.getInteger(ctx, "x"));
         data.setCenterZ(IntegerArgumentType.getInteger(ctx, "z"));
-        ctx.getSource().sendFeedback(() -> Text.literal("Success!"), false);
+        source.sendMessage(ServerI18n.translateToLiteral(source, "message.resource_world.success"));
         return 1;
     }
 }

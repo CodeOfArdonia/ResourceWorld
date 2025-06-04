@@ -18,7 +18,7 @@ public class PositionLocator {
 
     @Nullable
     public static BlockPos locate(World world, ResourceWorldData data) {
-        return Optional.ofNullable(LOCATOR.getOrDefault(world.getRegistryKey().getValue(), (w, d) -> randomPos(w, d, world.getTopY()))).map(x -> x.apply(world, data)).filter(x -> world.getChunk(x) != null).map(pos -> world.getTopPosition(Heightmap.Type.MOTION_BLOCKING, pos)).orElse(null);
+        return Optional.ofNullable(LOCATOR.getOrDefault(data.getTargetWorld(), (w, d) -> randomPos(w, d, world.getTopY()))).map(x -> x.apply(world, data)).filter(x -> world.getChunk(x) != null).map(pos -> world.getTopPosition(Heightmap.Type.MOTION_BLOCKING, pos)).orElse(null);
     }
 
     public static BlockPos randomPos(World world, ResourceWorldData data, int y) {

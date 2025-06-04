@@ -13,7 +13,6 @@
     "LevelPropertiesMixin",
     "MinecraftServerMixin",
     "PlayerRespawnS2CPacketMixin",
-    "ServerPlayerEntityMixin",
     "ServerWorldMixin",
     "WorldBorderMixin"
   ],

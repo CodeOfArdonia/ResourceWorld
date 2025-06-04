@@ -4,12 +4,12 @@ import com.iafenvoy.resourceworld.ResourceWorld;
 import com.iafenvoy.resourceworld.accessor.MinecraftServerAccessor;
 import com.iafenvoy.resourceworld.config.ResourceWorldData;
 import com.iafenvoy.resourceworld.config.WorldConfig;
+import com.iafenvoy.server.i18n.ServerI18n;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.WorldSavePath;
 import net.minecraft.util.math.BlockPos;
@@ -84,10 +84,10 @@ public class ResourceWorldHelper {
         CompletableFuture.runAsync(() -> {
             WorldConfig.newSeed(key);
             unloadAndDelete(world);
-            printInfo(server, "Creating new world...", key);
+            printInfo(server, "message.resource_world.creating", key);
             server.execute(() -> {
                 recreateWorld(server, key, data.getTargetWorld());
-                printInfo(server, "Reset complete!", key);
+                printInfo(server, "message.resource_world.reset", key);
                 world.savingDisabled = false;
                 RESETTING.remove(key);
             });
@@ -111,18 +111,18 @@ public class ResourceWorldHelper {
         } catch (Exception e) {
             printError("Failed to remove poi data.", key, e);
         }
-        printInfo(server, "Successfully remove world data.", key);
+        printInfo(server, "message.resource_world.success_remove_world_data", key);
     }
 
     private static void unloadAndDelete(ServerWorld world) {
         RegistryKey<World> key = world.getRegistryKey();
         MinecraftServer server = world.getServer();
         world.savingDisabled = true;
-        printInfo(server, "Kicking player from world...", key);
+        printInfo(server, "message.resource_world.kick_players", key);
         teleportOut(world);
-        printInfo(server, "Unloading world...", key);
+        printInfo(server, "message.resource_world.unload_world", key);
         unloadWorld(world);
-        printInfo(server, "Removing world data from disk...", key);
+        printInfo(server, "message.resource_world.remove_world_data", key);
         deleteWorldData(server, key);
     }
 
@@ -130,14 +130,14 @@ public class ResourceWorldHelper {
         try {
             world.close();
         } catch (Exception e) {
-            ResourceWorldHelper.printError("Failed to close world.", world.getRegistryKey(), e);
+            printError("Failed to close world.", world.getRegistryKey(), e);
         }
     }
 
-    private static void printInfo(MinecraftServer server, String s, RegistryKey<World> world) {
-        String string = "[Resource World] (World: %s) %s".formatted(world.getValue().getPath(), s);
-        ResourceWorld.LOGGER.info(string);
-        server.getPlayerManager().broadcast(Text.literal(string), false);
+    private static void printInfo(MinecraftServer server, String key, RegistryKey<World> world) {
+        ResourceWorld.LOGGER.info(ServerI18n.translate(ServerI18n.DEFAULT_LANGUAGE, "message.resource_world.base", world.getValue().getPath(), ServerI18n.translate(ServerI18n.DEFAULT_LANGUAGE, key)));
+        for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList())
+            player.sendMessage(ServerI18n.translateToLiteral(player, "message.resource_world.base", world.getValue().getPath(), ServerI18n.translate(player, key)));
     }
 
     private static void printError(String s, RegistryKey<World> world, Object... data) {

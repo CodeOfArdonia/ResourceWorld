@@ -1,0 +1,20 @@
+{
+  "message.resource_world.base": "[Resource World] (World: %s) %s",
+  "message.resource_world.cannot_find_position": "Cannot find valid location for teleport! (Retry or check config)",
+  "message.resource_world.confirm_in_60s": "Type again in 60s to confirm deletion",
+  "message.resource_world.creating": "Creating new world...",
+  "message.resource_world.disabled": "This resource world is disabled",
+  "message.resource_world.duplicate_id": "This world id has been used!",
+  "message.resource_world.finding_position": "Finding valid position, please wait...",
+  "message.resource_world.kick_players": "Kicking player from world...",
+  "message.resource_world.not_a_resource_world": "This is not a resource world!",
+  "message.resource_world.range_info": "Center: x=%s, z=%s | Range: %s",
+  "message.resource_world.remove_world_data": "Removing world data from disk...",
+  "message.resource_world.reset": "Reset complete!",
+  "message.resource_world.resetting": "Resource world is resetting, please wait.",
+  "message.resource_world.success": "Success!",
+  "message.resource_world.success_remove_world_data": "Successfully remove world data.",
+  "message.resource_world.teleport_cooldown": "Teleport cooldown, remaining time: %s seconds.",
+  "message.resource_world.unknown_resource_world": "Unknown resource world key",
+  "message.resource_world.unload_world": "Unloading world..."
+}

@@ -41,6 +41,8 @@ dependencies {
 
     implementation(annotationProcessor("io.github.llamalad7:mixinextras-common:0.2.0"))
     implementation(include("io.github.llamalad7:mixinextras-forge:0.2.0"))
+
+    modImplementation "curse.maven:server-i18n-api-1278793:6613871"
 }
 
 processResources {

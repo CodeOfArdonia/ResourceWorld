@@ -133,19 +133,15 @@ public final class ResourceCommand {
         ResourceWorldData data = WorldConfig.get(key);
         if (data == null)
             throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world"));
-        if (!data.isEnabled()) {
-            source.sendError(ServerI18n.translateToLiteral(source, "message.resource_world.disabled"));
-            return 0;
-        }
+        if (!data.isEnabled())
+            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.disabled"));
         MinecraftServer server = source.getServer();
         ServerWorld world = server.getWorld(key);
         if (world == null)
             throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world"));
         long delta = COOLDOWNS.getOrDefault(player, 0) + world.getGameRules().getInt(ResourceGameRules.COOLDOWN_SECOND) * 1000L - System.currentTimeMillis();
-        if (delta > 0) {
-            source.sendError(ServerI18n.translateToLiteral("message.resource_world.teleport_cooldown", String.valueOf(delta / 1000)));
-            return 0;
-        }
+        if (delta > 0)
+            throw new CommandException(ServerI18n.translateToLiteral("message.resource_world.teleport_cooldown", String.valueOf(delta / 1000)));
         source.sendMessage(ServerI18n.translateToLiteral(source, "message.resource_world.finding_position"));
         BlockPos pos = PositionLocator.locate(world, data);
         if (pos == null)

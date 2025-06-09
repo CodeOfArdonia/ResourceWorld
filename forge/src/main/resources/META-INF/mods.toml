@@ -1,6 +1,6 @@
 modLoader = "javafml"
 loaderVersion = "[47,)"
-issueTrackerURL = "https://github.com/IAFEnvoy/ResourceWorld/issues"
+issueTrackerURL = "https://github.com/CodeOfArdonia/ResourceWorld/issues"
 license = "All Right Reserved"
 
 [[mods]]

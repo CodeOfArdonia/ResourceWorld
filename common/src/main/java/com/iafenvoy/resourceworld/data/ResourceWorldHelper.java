@@ -128,7 +128,7 @@ public class ResourceWorldHelper {
 
     private static void unloadWorld(ServerWorld world) {
         try {
-            world.close();
+            ((MinecraftServerAccessor) world.getServer()).resource_world$getWorlds().remove(world.getRegistryKey());
         } catch (Exception e) {
             printError("Failed to close world.", world.getRegistryKey(), e);
         }

@@ -1,16 +1,12 @@
-package com.iafenvoy.resourceworld.config;
+package com.iafenvoy.resourceworld.util;
 
-import com.iafenvoy.resourceworld.ResourceWorld;
 import com.mojang.serialization.Codec;
 import net.minecraft.world.GameRules;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public final class ResourceGameRules {
-    public static final GameRules.Key<GameRules.IntRule> COOLDOWN_SECOND = GameRules.register("%s:tp_cooldown_seconds".formatted(ResourceWorld.MOD_ID), GameRules.Category.PLAYER, GameRules.IntRule.create(30));
-    public static final GameRules.Key<GameRules.BooleanRule> HIDE_SEED_HASH = GameRules.register("%s:hide_seed_hash".formatted(ResourceWorld.MOD_ID), GameRules.Category.PLAYER, GameRules.BooleanRule.create(false));
-
+public final class GameRuleCodec {
     public static final Codec<GameRules> CODEC = Codec.unboundedMap(Codec.STRING, Codec.STRING).xmap(m -> {
         GameRules gameRules = new GameRules();
         GameRules.accept(new GameRules.Visitor() {
@@ -32,7 +28,4 @@ public final class ResourceGameRules {
         });
         return map;
     });
-
-    public static void init() {
-    }
 }

@@ -1,10 +1,13 @@
 package com.iafenvoy.resourceworld.config;
 
+import com.iafenvoy.resourceworld.util.GameRuleCodec;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.GameRules;
+import org.jetbrains.annotations.Nullable;
 
 public final class ResourceWorldData {
     public static final Codec<ResourceWorldData> CODEC = RecordCodecBuilder.create(i -> i.group(
@@ -12,33 +15,27 @@ public final class ResourceWorldData {
             Codec.BOOL.fieldOf("enabled").forGetter(ResourceWorldData::isEnabled),
             Codec.LONG.fieldOf("seed").forGetter(ResourceWorldData::getSeed),
             Difficulty.CODEC.optionalFieldOf("difficulty", Difficulty.EASY).forGetter(ResourceWorldData::getDifficulty),
-            ResourceGameRules.CODEC.optionalFieldOf("gamerules", new GameRules()).forGetter(ResourceWorldData::getGameRules),
-            Codec.INT.fieldOf("centerX").forGetter(ResourceWorldData::getCenterX),
-            Codec.INT.fieldOf("centerZ").forGetter(ResourceWorldData::getCenterZ),
-            Codec.INT.fieldOf("range").forGetter(ResourceWorldData::getRange)
+            GameRuleCodec.CODEC.optionalFieldOf("gamerules", new GameRules()).forGetter(ResourceWorldData::getGameRules),
+            Settings.CODEC.optionalFieldOf("settings", new Settings()).forGetter(ResourceWorldData::getSettings)
     ).apply(i, ResourceWorldData::new));
     private final Identifier targetWorld;
     private boolean enabled;
     private long seed;
     private Difficulty difficulty;
-    private GameRules gameRules;
-    private int centerX;
-    private int centerZ;
-    private int range;
+    private final GameRules gameRules;
+    private final Settings settings;
 
     public ResourceWorldData(Identifier targetWorld) {
-        this(targetWorld, false, 0, Difficulty.EASY, new GameRules(), 0, 0, 4096);
+        this(targetWorld, false, 0, Difficulty.EASY, new GameRules(), new Settings());
     }
 
-    public ResourceWorldData(Identifier targetWorld, boolean enabled, long seed, Difficulty difficulty, GameRules gameRules, int centerX, int centerZ, int range) {
+    public ResourceWorldData(Identifier targetWorld, boolean enabled, long seed, Difficulty difficulty, GameRules gameRules, Settings settings) {
         this.targetWorld = targetWorld;
         this.enabled = enabled;
         this.seed = seed;
         this.difficulty = difficulty;
         this.gameRules = gameRules;
-        this.centerX = centerX;
-        this.centerZ = centerZ;
-        this.range = range;
+        this.settings = settings;
     }
 
     public Identifier getTargetWorld() {
@@ -73,31 +70,97 @@ public final class ResourceWorldData {
         return this.gameRules;
     }
 
-    public void setGameRules(GameRules gameRules) {
-        this.gameRules = gameRules;
+    public Settings getSettings() {
+        return this.settings;
     }
 
-    public int getCenterX() {
-        return this.centerX;
-    }
+    public static final class Settings {
+        public static final Codec<Settings> CODEC = RecordCodecBuilder.create(i -> i.group(
+                Codec.INT.fieldOf("centerX").forGetter(Settings::getCenterX),
+                Codec.INT.fieldOf("centerZ").forGetter(Settings::getCenterZ),
+                Codec.INT.fieldOf("range").forGetter(Settings::getRange),
+                BlockPos.CODEC.optionalFieldOf("spawnPoint", null).forGetter(Settings::getSpawnPoint),
+                Codec.INT.fieldOf("cooldown").forGetter(Settings::getCooldown),
+                Codec.BOOL.fieldOf("hideSeedHash").forGetter(Settings::isHideSeedHash),
+                Codec.BOOL.fieldOf("allowHomeCommand").forGetter(Settings::isAllowHomeCommand)
+        ).apply(i, Settings::new));
 
-    public void setCenterX(int centerX) {
-        this.centerX = centerX;
-    }
+        private int centerX;
+        private int centerZ;
+        private int range;
+        private @Nullable BlockPos spawnPoint;
+        private int cooldown;
+        private boolean hideSeedHash;
+        private boolean allowHomeCommand;
 
-    public int getCenterZ() {
-        return this.centerZ;
-    }
+        public Settings() {
+            this(0, 0, 4096, null, 30, false, true);
+        }
 
-    public void setCenterZ(int centerZ) {
-        this.centerZ = centerZ;
-    }
+        public Settings(int centerX, int centerZ, int range, @Nullable BlockPos spawnPoint, int cooldown, boolean hideSeedHash, boolean allowHomeCommand) {
+            this.centerX = centerX;
+            this.centerZ = centerZ;
+            this.range = range;
+            this.spawnPoint = spawnPoint;
+            this.cooldown = cooldown;
+            this.hideSeedHash = hideSeedHash;
+            this.allowHomeCommand = allowHomeCommand;
+        }
 
-    public int getRange() {
-        return this.range;
-    }
+        public int getCenterX() {
+            return this.centerX;
+        }
 
-    public void setRange(int range) {
-        this.range = range;
+        public void setCenterX(int centerX) {
+            this.centerX = centerX;
+        }
+
+        public int getCenterZ() {
+            return this.centerZ;
+        }
+
+        public void setCenterZ(int centerZ) {
+            this.centerZ = centerZ;
+        }
+
+        public int getRange() {
+            return this.range;
+        }
+
+        public void setRange(int range) {
+            this.range = range;
+        }
+
+        public @Nullable BlockPos getSpawnPoint() {
+            return this.spawnPoint;
+        }
+
+        public void setSpawnPoint(@Nullable BlockPos spawnPoint) {
+            this.spawnPoint = spawnPoint;
+        }
+
+        public int getCooldown() {
+            return this.cooldown;
+        }
+
+        public void setCooldown(int cooldown) {
+            this.cooldown = cooldown;
+        }
+
+        public boolean isHideSeedHash() {
+            return this.hideSeedHash;
+        }
+
+        public void setHideSeedHash(boolean hideSeedHash) {
+            this.hideSeedHash = hideSeedHash;
+        }
+
+        public boolean isAllowHomeCommand() {
+            return this.allowHomeCommand;
+        }
+
+        public void setAllowHomeCommand(boolean allowHomeCommand) {
+            this.allowHomeCommand = allowHomeCommand;
+        }
     }
 }

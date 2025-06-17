@@ -9,7 +9,6 @@
     "CommandManagerMixin",
     "DifficultyCommandMixin",
     "GameRuleCommandMixin",
-    "GameRulesMixin",
     "LevelPropertiesMixin",
     "MinecraftServerMixin",
     "PlayerRespawnS2CPacketMixin",

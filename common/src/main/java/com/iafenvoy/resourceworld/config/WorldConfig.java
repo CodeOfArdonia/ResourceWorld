@@ -99,10 +99,6 @@ public class WorldConfig {
         Optional.ofNullable(get(key)).ifPresent(x -> x.setSeed(randomSeed()));
     }
 
-    public static boolean shouldHideSeed() {
-        return SERVER != null && SERVER.getOverworld().getGameRules().getBoolean(ResourceGameRules.HIDE_SEED_HASH);
-    }
-
     private static long randomSeed() {
         return RANDOM.nextLong();
     }

@@ -23,7 +23,8 @@ public abstract class WorldBorderMixin {
         if (MixinCache.CURRENT_TICKING_WORLD == null) return;
         ResourceWorldData data = WorldConfig.get(MixinCache.CURRENT_TICKING_WORLD);
         if (data == null) return;
-        this.setCenter(data.getCenterX(), data.getCenterZ());
-        this.setSize(data.getRange() * 2);
+        ResourceWorldData.Settings settings = data.getSettings();
+        this.setCenter(settings.getCenterX(), settings.getCenterZ());
+        this.setSize(settings.getRange() * 2);
     }
 }

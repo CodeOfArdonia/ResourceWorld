@@ -1,15 +1,17 @@
 package com.iafenvoy.resourceworld;
 
-import com.iafenvoy.resourceworld.config.ResourceGameRules;
 import com.iafenvoy.resourceworld.config.ResourceWorldData;
 import com.iafenvoy.resourceworld.config.WorldConfig;
 import com.iafenvoy.resourceworld.data.PositionLocator;
 import com.iafenvoy.resourceworld.data.ResourceWorldHelper;
+import com.iafenvoy.resourceworld.util.CommandHelper;
 import com.iafenvoy.server.i18n.ServerI18n;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.LongArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
@@ -17,6 +19,7 @@ import it.unimi.dsi.fastutil.objects.Object2LongLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.CommandSource;
+import net.minecraft.command.argument.BlockPosArgumentType;
 import net.minecraft.command.argument.IdentifierArgumentType;
 import net.minecraft.command.suggestion.SuggestionProviders;
 import net.minecraft.registry.RegistryKey;
@@ -40,6 +43,15 @@ public final class ResourceCommand {
     private static final Object2LongMap<String> DELETE_CONFIRM = new Object2LongLinkedOpenHashMap<>();
 
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
+        RequiredArgumentBuilder<ServerCommandSource, String> settings = argument("world", StringArgumentType.word()).suggests(WORLD);
+        CommandHelper.appendSetting(settings, "centerX", IntegerArgumentType.integer(), IntegerArgumentType::getInteger, ResourceWorldData.Settings::getCenterX, ResourceWorldData.Settings::setCenterX);
+        CommandHelper.appendSetting(settings, "centerZ", IntegerArgumentType.integer(), IntegerArgumentType::getInteger, ResourceWorldData.Settings::getCenterZ, ResourceWorldData.Settings::setCenterZ);
+        CommandHelper.appendSetting(settings, "range", IntegerArgumentType.integer(0), IntegerArgumentType::getInteger, ResourceWorldData.Settings::getRange, ResourceWorldData.Settings::setRange);
+        CommandHelper.appendSetting(settings, "spawnPoint", BlockPosArgumentType.blockPos(), BlockPosArgumentType::getBlockPos, ResourceWorldData.Settings::getSpawnPoint, ResourceWorldData.Settings::setSpawnPoint);
+        CommandHelper.appendSetting(settings, "cooldown", IntegerArgumentType.integer(0), IntegerArgumentType::getInteger, ResourceWorldData.Settings::getCooldown, ResourceWorldData.Settings::setCooldown);
+        CommandHelper.appendSetting(settings, "hideSeedHash", BoolArgumentType.bool(), BoolArgumentType::getBool, ResourceWorldData.Settings::isHideSeedHash, ResourceWorldData.Settings::setHideSeedHash);
+        CommandHelper.appendSetting(settings, "allowHomeCommand", BoolArgumentType.bool(), BoolArgumentType::getBool, ResourceWorldData.Settings::isAllowHomeCommand, ResourceWorldData.Settings::setAllowHomeCommand);
+
         dispatcher.register(literal("resourceworld")
                 .then(literal("home")
                         .requires(ServerCommandSource::isExecutedByPlayer)
@@ -82,33 +94,20 @@ public final class ResourceCommand {
                                 .suggests(WORLD)
                                 .executes(ctx -> setEnable(ctx, false))
                         ))
-                .then(literal("range")
+                .then(literal("settings")
                         .requires(ctx -> ctx.hasPermissionLevel(4))
-                        .then(literal("get")
-                                .then(argument("world", StringArgumentType.word())
-                                        .suggests(WORLD)
-                                        .executes(ResourceCommand::getRange)
-                                ))
-                        .then(literal("set-range")
-                                .then(argument("world", StringArgumentType.word())
-                                        .suggests(WORLD)
-                                        .then(argument("range", IntegerArgumentType.integer(1))
-                                                .executes(ResourceCommand::setRange)
-                                        )))
-                        .then(literal("set-center")
-                                .then(argument("world", StringArgumentType.word())
-                                        .suggests(WORLD)
-                                        .then(argument("x", IntegerArgumentType.integer(1))
-                                                .then(argument("z", IntegerArgumentType.integer(1))
-                                                        .executes(ResourceCommand::setCenter)
-                                                ))))
-                ));
+                        .then(settings))
+        );
     }
 
     private static int home(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
         ServerCommandSource source = ctx.getSource();
         ServerPlayerEntity player = source.getPlayerOrThrow();
-        if (ResourceWorldHelper.isNotResourceWorld(player.getWorld().getRegistryKey()))
+        RegistryKey<World> key = player.getWorld().getRegistryKey();
+        ResourceWorldData data = WorldConfig.get(key);
+        if (data == null)
+            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world"));
+        if (!data.getSettings().isAllowHomeCommand())
             throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world"));
         MinecraftServer server = source.getServer();
         ServerWorld overworld = server.getOverworld();
@@ -139,7 +138,7 @@ public final class ResourceCommand {
         ServerWorld world = server.getWorld(key);
         if (world == null)
             throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world"));
-        long delta = COOLDOWNS.getOrDefault(player, 0) + world.getGameRules().getInt(ResourceGameRules.COOLDOWN_SECOND) * 1000L - System.currentTimeMillis();
+        long delta = COOLDOWNS.getOrDefault(player, 0) + data.getSettings().getCooldown() * 1000L - System.currentTimeMillis();
         if (delta > 0)
             throw new CommandException(ServerI18n.translateToLiteral("message.resource_world.teleport_cooldown", String.valueOf(delta / 1000)));
         source.sendMessage(ServerI18n.translateToLiteral(source, "message.resource_world.finding_position"));
@@ -205,45 +204,6 @@ public final class ResourceCommand {
         if (data == null)
             throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world"));
         data.setEnabled(enable);
-        source.sendMessage(ServerI18n.translateToLiteral(source, "message.resource_world.success"));
-        return 1;
-    }
-
-    private static int getRange(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
-        RegistryKey<World> key = ResourceWorldHelper.toRegistryKey(StringArgumentType.getString(ctx, "world"));
-        ServerCommandSource source = ctx.getSource();
-        if (ResourceWorldHelper.isNotResourceWorld(key))
-            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world"));
-        ResourceWorldData data = WorldConfig.get(key);
-        if (data == null)
-            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world"));
-        source.sendMessage(ServerI18n.translateToLiteral(source, "message.resource_world.range_info", String.valueOf(data.getCenterX()), String.valueOf(data.getCenterZ()), String.valueOf(data.getCenterZ())));
-        return 1;
-    }
-
-    private static int setRange(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
-        RegistryKey<World> key = ResourceWorldHelper.toRegistryKey(StringArgumentType.getString(ctx, "world"));
-        ServerCommandSource source = ctx.getSource();
-        if (ResourceWorldHelper.isNotResourceWorld(key))
-            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world"));
-        ResourceWorldData data = WorldConfig.get(key);
-        if (data == null)
-            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world"));
-        data.setRange(IntegerArgumentType.getInteger(ctx, "range"));
-        source.sendMessage(ServerI18n.translateToLiteral(source, "message.resource_world.success"));
-        return 1;
-    }
-
-    private static int setCenter(CommandContext<ServerCommandSource> ctx) throws CommandSyntaxException {
-        RegistryKey<World> key = ResourceWorldHelper.toRegistryKey(StringArgumentType.getString(ctx, "world"));
-        ServerCommandSource source = ctx.getSource();
-        if (ResourceWorldHelper.isNotResourceWorld(key))
-            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world"));
-        ResourceWorldData data = WorldConfig.get(key);
-        if (data == null)
-            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world"));
-        data.setCenterX(IntegerArgumentType.getInteger(ctx, "x"));
-        data.setCenterZ(IntegerArgumentType.getInteger(ctx, "z"));
         source.sendMessage(ServerI18n.translateToLiteral(source, "message.resource_world.success"));
         return 1;
     }

@@ -1,5 +1,6 @@
 package com.iafenvoy.resourceworld.mixin;
 
+import com.iafenvoy.resourceworld.config.ResourceWorldData;
 import com.iafenvoy.resourceworld.config.WorldConfig;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.network.packet.s2c.play.PlayerRespawnS2CPacket;
@@ -26,6 +27,7 @@ public class PlayerRespawnS2CPacketMixin {
 
     @Inject(method = "write", at = @At("HEAD"))
     private void injectEmptyHashedSeed(PacketByteBuf buf, CallbackInfo ci) {
-        if (WorldConfig.get(this.dimension) != null && WorldConfig.shouldHideSeed()) this.sha256Seed = 0;
+        ResourceWorldData data = WorldConfig.get(this.dimension);
+        if (data != null && data.getSettings().isHideSeedHash()) this.sha256Seed = 0;
     }
 }

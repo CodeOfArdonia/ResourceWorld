@@ -47,7 +47,7 @@ public final class ResourceCommand {
         CommandHelper.appendSetting(settings, "centerX", IntegerArgumentType.integer(), IntegerArgumentType::getInteger, ResourceWorldData.Settings::getCenterX, ResourceWorldData.Settings::setCenterX);
         CommandHelper.appendSetting(settings, "centerZ", IntegerArgumentType.integer(), IntegerArgumentType::getInteger, ResourceWorldData.Settings::getCenterZ, ResourceWorldData.Settings::setCenterZ);
         CommandHelper.appendSetting(settings, "range", IntegerArgumentType.integer(0), IntegerArgumentType::getInteger, ResourceWorldData.Settings::getRange, ResourceWorldData.Settings::setRange);
-        CommandHelper.appendSetting(settings, "spawnPoint", BlockPosArgumentType.blockPos(), BlockPosArgumentType::getBlockPos, ResourceWorldData.Settings::getSpawnPoint, ResourceWorldData.Settings::setSpawnPoint);
+        CommandHelper.appendSettingOptional(settings, "spawnPoint", BlockPosArgumentType.blockPos(), BlockPosArgumentType::getBlockPos, ResourceWorldData.Settings::getSpawnPoint, ResourceWorldData.Settings::setSpawnPoint);
         CommandHelper.appendSetting(settings, "cooldown", IntegerArgumentType.integer(0), IntegerArgumentType::getInteger, ResourceWorldData.Settings::getCooldown, ResourceWorldData.Settings::setCooldown);
         CommandHelper.appendSetting(settings, "hideSeedHash", BoolArgumentType.bool(), BoolArgumentType::getBool, ResourceWorldData.Settings::isHideSeedHash, ResourceWorldData.Settings::setHideSeedHash);
         CommandHelper.appendSetting(settings, "allowHomeCommand", BoolArgumentType.bool(), BoolArgumentType::getBool, ResourceWorldData.Settings::isAllowHomeCommand, ResourceWorldData.Settings::setAllowHomeCommand);

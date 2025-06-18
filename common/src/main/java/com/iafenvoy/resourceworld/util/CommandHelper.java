@@ -13,6 +13,7 @@ import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.world.World;
 
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -47,5 +48,46 @@ public final class CommandHelper {
                     source.sendMessage(ServerI18n.translateToLiteral(source, "message.resource_world.setting.set", name, String.valueOf(value)));
                     return 1;
                 }))));
+    }
+
+    public static <T> void appendSettingOptional(ArgumentBuilder<ServerCommandSource, ?> builder, String name, ArgumentType<?> type, BiFunction<CommandContext<ServerCommandSource>, String, T> parser, Function<ResourceWorldData.Settings, Optional<T>> getter, BiConsumer<ResourceWorldData.Settings, T> setter) {
+        builder.then(literal(name)
+                .then(literal("get").executes(ctx -> {
+                    RegistryKey<World> key = ResourceWorldHelper.toRegistryKey(StringArgumentType.getString(ctx, "world"));
+                    ServerCommandSource source = ctx.getSource();
+                    if (ResourceWorldHelper.isNotResourceWorld(key))
+                        throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world"));
+                    ResourceWorldData data = WorldConfig.get(key);
+                    if (data == null)
+                        throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world"));
+                    Optional<T> value = getter.apply(data.getSettings());
+                    source.sendMessage(ServerI18n.translateToLiteral(source, "message.resource_world.setting.get", name, String.valueOf(value.orElse(null))));
+                    return 1;
+                }))
+                .then(literal("set").then(argument("value", type).executes(ctx -> {
+                    RegistryKey<World> key = ResourceWorldHelper.toRegistryKey(StringArgumentType.getString(ctx, "world"));
+                    ServerCommandSource source = ctx.getSource();
+                    if (ResourceWorldHelper.isNotResourceWorld(key))
+                        throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world"));
+                    ResourceWorldData data = WorldConfig.get(key);
+                    if (data == null)
+                        throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world"));
+                    T value = parser.apply(ctx, "value");
+                    setter.accept(data.getSettings(), value);
+                    source.sendMessage(ServerI18n.translateToLiteral(source, "message.resource_world.setting.set", name, String.valueOf(value)));
+                    return 1;
+                })))
+                .then(literal("clear").executes(ctx -> {
+                    RegistryKey<World> key = ResourceWorldHelper.toRegistryKey(StringArgumentType.getString(ctx, "world"));
+                    ServerCommandSource source = ctx.getSource();
+                    if (ResourceWorldHelper.isNotResourceWorld(key))
+                        throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world"));
+                    ResourceWorldData data = WorldConfig.get(key);
+                    if (data == null)
+                        throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world"));
+                    setter.accept(data.getSettings(), null);
+                    source.sendMessage(ServerI18n.translateToLiteral(source, "message.resource_world.setting.set", name, null));
+                    return 1;
+                })));
     }
 }

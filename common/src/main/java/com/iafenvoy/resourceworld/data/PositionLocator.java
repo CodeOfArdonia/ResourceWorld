@@ -24,10 +24,9 @@ public class PositionLocator {
     public static BlockPos randomPos(World world, ResourceWorldData data, int y) {
         Random random = new Random(world.random.nextLong());
         ResourceWorldData.Settings settings = data.getSettings();
-        BlockPos pos = settings.getSpawnPoint();
-        if (pos != null) return pos;
-        return new BlockPos(randomInt(random, settings.getCenterX() - settings.getRange(), settings.getCenterX() + settings.getRange()),
-                y, randomInt(random, settings.getCenterZ() - settings.getRange(), settings.getCenterZ() + settings.getRange()));
+        Optional<BlockPos> pos = settings.getSpawnPoint();
+        return pos.orElseGet(() -> new BlockPos(randomInt(random, settings.getCenterX() - settings.getRange(), settings.getCenterX() + settings.getRange()),
+                y, randomInt(random, settings.getCenterZ() - settings.getRange(), settings.getCenterZ() + settings.getRange())));
     }
 
     public static int randomInt(Random random, int min, int max) {

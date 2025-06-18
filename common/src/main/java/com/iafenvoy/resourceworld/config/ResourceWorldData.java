@@ -9,6 +9,8 @@ import net.minecraft.world.Difficulty;
 import net.minecraft.world.GameRules;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Optional;
+
 public final class ResourceWorldData {
     public static final Codec<ResourceWorldData> CODEC = RecordCodecBuilder.create(i -> i.group(
             Identifier.CODEC.fieldOf("targetWorld").forGetter(ResourceWorldData::getTargetWorld),
@@ -79,7 +81,7 @@ public final class ResourceWorldData {
                 Codec.INT.fieldOf("centerX").forGetter(Settings::getCenterX),
                 Codec.INT.fieldOf("centerZ").forGetter(Settings::getCenterZ),
                 Codec.INT.fieldOf("range").forGetter(Settings::getRange),
-                BlockPos.CODEC.optionalFieldOf("spawnPoint", null).forGetter(Settings::getSpawnPoint),
+                BlockPos.CODEC.optionalFieldOf("spawnPoint").forGetter(Settings::getSpawnPoint),
                 Codec.INT.fieldOf("cooldown").forGetter(Settings::getCooldown),
                 Codec.BOOL.fieldOf("hideSeedHash").forGetter(Settings::isHideSeedHash),
                 Codec.BOOL.fieldOf("allowHomeCommand").forGetter(Settings::isAllowHomeCommand)
@@ -88,16 +90,16 @@ public final class ResourceWorldData {
         private int centerX;
         private int centerZ;
         private int range;
-        private @Nullable BlockPos spawnPoint;
+        private Optional<BlockPos> spawnPoint;
         private int cooldown;
         private boolean hideSeedHash;
         private boolean allowHomeCommand;
 
         public Settings() {
-            this(0, 0, 4096, null, 30, false, true);
+            this(0, 0, 4096, Optional.empty(), 30, false, true);
         }
 
-        public Settings(int centerX, int centerZ, int range, @Nullable BlockPos spawnPoint, int cooldown, boolean hideSeedHash, boolean allowHomeCommand) {
+        public Settings(int centerX, int centerZ, int range, Optional<BlockPos> spawnPoint, int cooldown, boolean hideSeedHash, boolean allowHomeCommand) {
             this.centerX = centerX;
             this.centerZ = centerZ;
             this.range = range;
@@ -131,12 +133,12 @@ public final class ResourceWorldData {
             this.range = range;
         }
 
-        public @Nullable BlockPos getSpawnPoint() {
+        public Optional<BlockPos> getSpawnPoint() {
             return this.spawnPoint;
         }
 
         public void setSpawnPoint(@Nullable BlockPos spawnPoint) {
-            this.spawnPoint = spawnPoint;
+            this.spawnPoint = Optional.ofNullable(spawnPoint);
         }
 
         public int getCooldown() {

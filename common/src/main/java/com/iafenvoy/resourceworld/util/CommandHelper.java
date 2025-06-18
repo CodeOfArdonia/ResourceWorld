@@ -8,7 +8,7 @@ import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
-import net.minecraft.command.CommandException;
+import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.world.World;
@@ -27,10 +27,10 @@ public final class CommandHelper {
                     RegistryKey<World> key = ResourceWorldHelper.toRegistryKey(StringArgumentType.getString(ctx, "world"));
                     ServerCommandSource source = ctx.getSource();
                     if (ResourceWorldHelper.isNotResourceWorld(key))
-                        throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world"));
+                        throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world")).create();
                     ResourceWorldData data = WorldConfig.get(key);
                     if (data == null)
-                        throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world"));
+                        throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world")).create();
                     source.sendMessage(ServerI18n.translateToLiteral(source, "message.resource_world.setting.get", name, String.valueOf(getter.apply(data.getSettings()))));
                     return 1;
                 }))
@@ -38,10 +38,10 @@ public final class CommandHelper {
                     RegistryKey<World> key = ResourceWorldHelper.toRegistryKey(StringArgumentType.getString(ctx, "world"));
                     ServerCommandSource source = ctx.getSource();
                     if (ResourceWorldHelper.isNotResourceWorld(key))
-                        throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world"));
+                        throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world")).create();
                     ResourceWorldData data = WorldConfig.get(key);
                     if (data == null)
-                        throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world"));
+                        throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world")).create();
                     T value = parser.apply(ctx, "value");
                     setter.accept(data.getSettings(), value);
                     source.sendMessage(ServerI18n.translateToLiteral(source, "message.resource_world.setting.set", name, String.valueOf(value)));

@@ -1,5 +1,5 @@
 modLoader = "javafml"
-loaderVersion = "[47,)"
+loaderVersion = "[2,)"
 issueTrackerURL = "https://github.com/CodeOfArdonia/ResourceWorld/issues"
 license = "All Right Reserved"
 
@@ -14,16 +14,16 @@ A server side mod to create resource worlds
 logoFile = "logo.png"
 
 [[dependencies.resource_world]]
-modId = "forge"
+modId = "neoforge"
 mandatory = true
-versionRange = "[47,)"
+versionRange = "[2,)"
 ordering = "NONE"
 side = "BOTH"
 
 [[dependencies.resource_world]]
 modId = "minecraft"
 mandatory = true
-versionRange = "[1.20.1,1.20.5)"
+versionRange = "[1.21,1.21.2)"
 ordering = "NONE"
 side = "BOTH"
 
@@ -33,3 +33,6 @@ mandatory = true
 versionRange = "[0,)"
 ordering = "NONE"
 side = "BOTH"
+
+[[mixins]]
+config = "resource_world.mixins.json"

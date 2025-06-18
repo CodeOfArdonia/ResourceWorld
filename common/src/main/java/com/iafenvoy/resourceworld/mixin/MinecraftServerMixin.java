@@ -2,6 +2,7 @@ package com.iafenvoy.resourceworld.mixin;
 
 import com.google.common.collect.ImmutableList;
 import com.iafenvoy.resourceworld.ResourceWorld;
+import com.iafenvoy.resourceworld.config.WorldConfig;
 import com.iafenvoy.resourceworld.accessor.MinecraftServerAccessor;
 import com.iafenvoy.resourceworld.config.WorldConfig;
 import net.minecraft.registry.*;
@@ -16,7 +17,6 @@ import net.minecraft.world.SaveProperties;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.source.BiomeAccess;
 import net.minecraft.world.border.WorldBorder;
-import net.minecraft.world.border.WorldBorderListener;
 import net.minecraft.world.dimension.DimensionOptions;
 import net.minecraft.world.gen.GeneratorOptions;
 import net.minecraft.world.level.ServerWorldProperties;
@@ -73,11 +73,6 @@ public abstract class MinecraftServerMixin extends ThreadExecutor<ServerTask> im
         WorldConfig.stop();
     }
 
-    @Override
-    public Map<RegistryKey<World>, ServerWorld> resource_world$getWorlds() {
-        return this.worlds;
-    }
-
     @SuppressWarnings("all")
     @Override
     public boolean resource_world$createWorld(RegistryKey<World> key, Identifier worldOption) {
@@ -93,13 +88,19 @@ public abstract class MinecraftServerMixin extends ThreadExecutor<ServerTask> im
             WorldBorder worldBorder = serverWorld.getWorldBorder();
             RandomSequencesState randomSequencesState = serverWorld.getRandomSequences();
             UnmodifiableLevelProperties unmodifiableLevelProperties = new UnmodifiableLevelProperties(this.saveProperties, serverWorldProperties);
-            ServerWorld serverWorld2 = new ServerWorld((MinecraftServer) (Object) this, this.workerExecutor, this.session, unmodifiableLevelProperties, key, registry.get(worldOption), WorldGenerationProgressTracker.create(16), bl, m, ImmutableList.of(), false, randomSequencesState);
-            worldBorder.addListener(new WorldBorderListener.WorldBorderSyncer(serverWorld2.getWorldBorder()));
+            ServerWorld serverWorld2 = new ServerWorld((MinecraftServer) (Object) this, this.workerExecutor, this.session, unmodifiableLevelProperties, key, registry.get(worldOption), new WorldGenerationProgressTracker(16), bl, m, ImmutableList.of(), false, randomSequencesState);
             this.worlds.put(key, serverWorld2);
+            MixinCache.WORLD_CHANGE_CALLBACKS.forEach(x -> x.accept((MinecraftServer) (Object) this));
             return true;
         } catch (Exception e) {
             ResourceWorld.LOGGER.error("Failed to create world", e);
             return false;
         }
+    }
+
+    @Override
+    public void resource_world$removeWorld(RegistryKey<World> key) {
+        this.worlds.remove(key);
+        MixinCache.WORLD_CHANGE_CALLBACKS.forEach(x -> x.accept((MinecraftServer) (Object) this));
     }
 }

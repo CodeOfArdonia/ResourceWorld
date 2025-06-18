@@ -9,7 +9,6 @@
     "CommandManagerMixin",
     "DifficultyCommandMixin",
     "GameRuleCommandMixin",
-    "LevelPropertiesMixin",
     "MinecraftServerMixin",
     "CommonPlayerSpawnInfoMixin",
     "ServerWorldMixin",

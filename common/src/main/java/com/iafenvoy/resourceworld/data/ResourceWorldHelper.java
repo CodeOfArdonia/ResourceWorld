@@ -70,7 +70,7 @@ public class ResourceWorldHelper {
         WorldConfig.remove(world.getRegistryKey());
         CompletableFuture.runAsync(() -> {
             unloadAndDelete(world);
-            server.execute(() -> ((MinecraftServerAccessor) server).resource_world$getWorlds().remove(world.getRegistryKey()));
+            server.execute(() -> ((MinecraftServerAccessor) server).resource_world$removeWorld(world.getRegistryKey()));
         });
     }
 
@@ -128,7 +128,7 @@ public class ResourceWorldHelper {
 
     private static void unloadWorld(ServerWorld world) {
         try {
-            ((MinecraftServerAccessor) world.getServer()).resource_world$getWorlds().remove(world.getRegistryKey());
+            ((MinecraftServerAccessor) world.getServer()).resource_world$removeWorld(world.getRegistryKey());
         } catch (Exception e) {
             printError("Failed to close world.", world.getRegistryKey(), e);
         }

@@ -2,8 +2,8 @@ package com.iafenvoy.resourceworld.mixin;
 
 import com.google.common.collect.ImmutableList;
 import com.iafenvoy.resourceworld.ResourceWorld;
-import com.iafenvoy.resourceworld.config.WorldConfig;
 import com.iafenvoy.resourceworld.accessor.MinecraftServerAccessor;
+import com.iafenvoy.resourceworld.config.WorldConfig;
 import net.minecraft.client.gui.WorldGenerationProgressTracker;
 import net.minecraft.registry.*;
 import net.minecraft.server.MinecraftServer;
@@ -16,7 +16,6 @@ import net.minecraft.world.SaveProperties;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.source.BiomeAccess;
 import net.minecraft.world.border.WorldBorder;
-import net.minecraft.world.border.WorldBorderListener;
 import net.minecraft.world.dimension.DimensionOptions;
 import net.minecraft.world.gen.GeneratorOptions;
 import net.minecraft.world.level.ServerWorldProperties;
@@ -94,7 +93,6 @@ public abstract class MinecraftServerMixin extends ThreadExecutor<ServerTask> im
             RandomSequencesState randomSequencesState = serverWorld.getRandomSequences();
             UnmodifiableLevelProperties unmodifiableLevelProperties = new UnmodifiableLevelProperties(this.saveProperties, serverWorldProperties);
             ServerWorld serverWorld2 = new ServerWorld((MinecraftServer) (Object) this, this.workerExecutor, this.session, unmodifiableLevelProperties, key, registry.get(worldOption), new WorldGenerationProgressTracker(16), bl, m, ImmutableList.of(), false, randomSequencesState);
-            worldBorder.addListener(new WorldBorderListener.WorldBorderSyncer(serverWorld2.getWorldBorder()));
             this.worlds.put(key, serverWorld2);
             return true;
         } catch (Exception e) {

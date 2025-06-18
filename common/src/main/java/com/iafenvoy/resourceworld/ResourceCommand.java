@@ -14,10 +14,10 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import it.unimi.dsi.fastutil.objects.Object2LongLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
-import net.minecraft.command.CommandException;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.argument.BlockPosArgumentType;
 import net.minecraft.command.argument.IdentifierArgumentType;
@@ -106,9 +106,9 @@ public final class ResourceCommand {
         RegistryKey<World> key = player.getWorld().getRegistryKey();
         ResourceWorldData data = WorldConfig.get(key);
         if (data == null)
-            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world"));
+            throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world")).create();
         if (!data.getSettings().isAllowHomeCommand())
-            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world"));
+            throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world")).create();
         MinecraftServer server = source.getServer();
         ServerWorld overworld = server.getOverworld();
         BlockPos spawnPoint = player.getSpawnPointPosition();
@@ -126,25 +126,25 @@ public final class ResourceCommand {
         ServerPlayerEntity player = source.getPlayerOrThrow();
         RegistryKey<World> key = ResourceWorldHelper.toRegistryKey(StringArgumentType.getString(ctx, "world"));
         if (ResourceWorldHelper.isNotResourceWorld(key))
-            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world"));
+            throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world")).create();
         if (ResourceWorldHelper.RESETTING.contains(key))
-            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.resetting"));
+            throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(source, "message.resource_world.resetting")).create();
         ResourceWorldData data = WorldConfig.get(key);
         if (data == null)
-            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world"));
+            throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world")).create();
         if (!data.isEnabled())
-            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.disabled"));
+            throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(source, "message.resource_world.disabled")).create();
         MinecraftServer server = source.getServer();
         ServerWorld world = server.getWorld(key);
         if (world == null)
-            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world"));
+            throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world")).create();
         long delta = COOLDOWNS.getOrDefault(player, 0) + data.getSettings().getCooldown() * 1000L - System.currentTimeMillis();
         if (delta > 0)
-            throw new CommandException(ServerI18n.translateToLiteral("message.resource_world.teleport_cooldown", String.valueOf(delta / 1000)));
+            throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral("message.resource_world.teleport_cooldown", String.valueOf(delta / 1000))).create();
         source.sendMessage(ServerI18n.translateToLiteral(source, "message.resource_world.finding_position"));
         BlockPos pos = PositionLocator.locate(world, data);
         if (pos == null)
-            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.cannot_find_position"));
+            throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(source, "message.resource_world.cannot_find_position")).create();
         player.teleport(world, pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, player.getYaw(), player.getPitch());
         COOLDOWNS.put(player, System.currentTimeMillis());
         return 1;
@@ -154,7 +154,7 @@ public final class ResourceCommand {
         String id = StringArgumentType.getString(ctx, "world");
         ServerCommandSource source = ctx.getSource();
         if (WorldConfig.get(ResourceWorldHelper.toRegistryKey(id)) != null)
-            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.duplicate_id"));
+            throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(source, "message.resource_world.duplicate_id")).create();
         Identifier target = IdentifierArgumentType.getIdentifier(ctx, "target");
         if (ResourceWorldHelper.createWorld(ctx.getSource().getServer(), ResourceWorldHelper.toRegistryKey(id), target, seed))
             source.sendMessage(ServerI18n.translateToLiteral(source, "message.resource_world.success"));
@@ -165,11 +165,11 @@ public final class ResourceCommand {
         RegistryKey<World> key = ResourceWorldHelper.toRegistryKey(StringArgumentType.getString(ctx, "world"));
         ServerCommandSource source = ctx.getSource();
         if (ResourceWorldHelper.isNotResourceWorld(key))
-            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world"));
+            throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world")).create();
         MinecraftServer server = source.getServer();
         ServerWorld world = server.getWorld(key);
         if (world == null)
-            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world"));
+            throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world")).create();
         ResourceWorldHelper.reset(world);
         return 1;
     }
@@ -178,11 +178,11 @@ public final class ResourceCommand {
         RegistryKey<World> key = ResourceWorldHelper.toRegistryKey(StringArgumentType.getString(ctx, "world"));
         ServerCommandSource source = ctx.getSource();
         if (ResourceWorldHelper.isNotResourceWorld(key))
-            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world"));
+            throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world")).create();
         MinecraftServer server = source.getServer();
         ServerWorld world = server.getWorld(key);
         if (world == null)
-            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world"));
+            throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world")).create();
         String id = ResourceWorldHelper.resolveId(world.getRegistryKey());
         if (DELETE_CONFIRM.containsKey(id) && DELETE_CONFIRM.getLong(id) + 60 * 1000 >= System.currentTimeMillis()) {
             ResourceWorldHelper.deleteWorld(server, world);
@@ -199,10 +199,10 @@ public final class ResourceCommand {
         RegistryKey<World> key = ResourceWorldHelper.toRegistryKey(StringArgumentType.getString(ctx, "world"));
         ServerCommandSource source = ctx.getSource();
         if (ResourceWorldHelper.isNotResourceWorld(key))
-            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world"));
+            throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world")).create();
         ResourceWorldData data = WorldConfig.get(key);
         if (data == null)
-            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world"));
+            throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world")).create();
         data.setEnabled(enable);
         source.sendMessage(ServerI18n.translateToLiteral(source, "message.resource_world.success"));
         return 1;

@@ -10,7 +10,7 @@
     "DifficultyCommandMixin",
     "GameRuleCommandMixin",
     "MinecraftServerMixin",
-    "PlayerRespawnS2CPacketMixin",
+    "CommonPlayerSpawnInfoMixin",
     "ServerWorldMixin",
     "WorldBorderMixin"
   ],

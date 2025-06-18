@@ -1,14 +1,14 @@
 package com.iafenvoy.resourceworld.mixin;
 
 import com.google.common.collect.ImmutableList;
-import com.iafenvoy.resourceworld.MixinCache;
 import com.iafenvoy.resourceworld.ResourceWorld;
+import com.iafenvoy.resourceworld.config.WorldConfig;
 import com.iafenvoy.resourceworld.accessor.MinecraftServerAccessor;
 import com.iafenvoy.resourceworld.config.WorldConfig;
-import net.minecraft.client.gui.WorldGenerationProgressTracker;
 import net.minecraft.registry.*;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ServerTask;
+import net.minecraft.server.WorldGenerationProgressTracker;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.random.RandomSequencesState;

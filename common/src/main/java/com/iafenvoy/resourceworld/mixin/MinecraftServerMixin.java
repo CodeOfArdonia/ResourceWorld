@@ -1,8 +1,8 @@
 package com.iafenvoy.resourceworld.mixin;
 
 import com.google.common.collect.ImmutableList;
+import com.iafenvoy.resourceworld.MixinCache;
 import com.iafenvoy.resourceworld.ResourceWorld;
-import com.iafenvoy.resourceworld.config.WorldConfig;
 import com.iafenvoy.resourceworld.accessor.MinecraftServerAccessor;
 import com.iafenvoy.resourceworld.config.WorldConfig;
 import net.minecraft.registry.*;
@@ -88,7 +88,7 @@ public abstract class MinecraftServerMixin extends ThreadExecutor<ServerTask> im
             WorldBorder worldBorder = serverWorld.getWorldBorder();
             RandomSequencesState randomSequencesState = serverWorld.getRandomSequences();
             UnmodifiableLevelProperties unmodifiableLevelProperties = new UnmodifiableLevelProperties(this.saveProperties, serverWorldProperties);
-            ServerWorld serverWorld2 = new ServerWorld((MinecraftServer) (Object) this, this.workerExecutor, this.session, unmodifiableLevelProperties, key, registry.get(worldOption), new WorldGenerationProgressTracker(16), bl, m, ImmutableList.of(), false, randomSequencesState);
+            ServerWorld serverWorld2 = new ServerWorld((MinecraftServer) (Object) this, this.workerExecutor, this.session, unmodifiableLevelProperties, key, registry.get(worldOption), WorldGenerationProgressTracker.create(16), bl, m, ImmutableList.of(), false, randomSequencesState);
             this.worlds.put(key, serverWorld2);
             MixinCache.WORLD_CHANGE_CALLBACKS.forEach(x -> x.accept((MinecraftServer) (Object) this));
             return true;

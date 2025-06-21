@@ -45,7 +45,7 @@ public abstract class ServerWorldMixin extends World {
     @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
     private void beforeTick(CallbackInfo ci) {
         if (ResourceWorldHelper.RESETTING.contains(this.getRegistryKey())) ci.cancel();
-        else MixinCache.CURRENT_TICKING_WORLD = this.getRegistryKey();
+        else if (!this.isClient) MixinCache.CURRENT_TICKING_WORLD = this.getRegistryKey();
     }
 
     @Inject(method = "tick", at = @At("TAIL"))

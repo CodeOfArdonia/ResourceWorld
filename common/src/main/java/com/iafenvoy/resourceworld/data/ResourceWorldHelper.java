@@ -19,7 +19,6 @@ import org.apache.commons.io.FileUtils;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 
 public class ResourceWorldHelper {
     public static final Set<RegistryKey<World>> RESETTING = new HashSet<>();
@@ -68,10 +67,8 @@ public class ResourceWorldHelper {
 
     public static void deleteWorld(MinecraftServer server, ServerWorld world) {
         WorldConfig.remove(world.getRegistryKey());
-        CompletableFuture.runAsync(() -> {
-            unloadAndDelete(world);
-            server.execute(() -> ((MinecraftServerAccessor) server).resource_world$removeWorld(world.getRegistryKey()));
-        });
+        unloadAndDelete(world);
+        ((MinecraftServerAccessor) server).resource_world$removeWorld(world.getRegistryKey());
     }
 
     public static void reset(ServerWorld world) {
@@ -81,17 +78,13 @@ public class ResourceWorldHelper {
         if (RESETTING.contains(key)) return;
         RESETTING.add(key);
         MinecraftServer server = world.getServer();
-        CompletableFuture.runAsync(() -> {
-            WorldConfig.newSeed(key);
-            unloadAndDelete(world);
-            printInfo(server, "message.resource_world.creating", key);
-            server.execute(() -> {
-                recreateWorld(server, key, data.getTargetWorld());
-                printInfo(server, "message.resource_world.reset", key);
-                world.savingDisabled = false;
-                RESETTING.remove(key);
-            });
-        });
+        WorldConfig.newSeed(key);
+        unloadAndDelete(world);
+        printInfo(server, "message.resource_world.creating", key);
+        recreateWorld(server, key, data.getTargetWorld());
+        printInfo(server, "message.resource_world.reset", key);
+        world.savingDisabled = false;
+        RESETTING.remove(key);
     }
 
     private static void deleteWorldData(MinecraftServer server, RegistryKey<World> key) {

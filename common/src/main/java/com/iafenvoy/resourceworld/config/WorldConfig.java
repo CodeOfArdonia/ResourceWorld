@@ -75,10 +75,12 @@ public class WorldConfig {
 
     @Nullable
     public static ResourceWorldData get(RegistryKey<World> key) {
+        if (ResourceWorldHelper.isNotResourceWorld(key)) return null;
         return DATA.get(ResourceWorldHelper.resolveId(key));
     }
 
     public static void remove(RegistryKey<World> key) {
+        if (ResourceWorldHelper.isNotResourceWorld(key)) return;
         DATA.remove(ResourceWorldHelper.resolveId(key));
         saveConfig();
     }

@@ -3,7 +3,6 @@ package com.iafenvoy.resourceworld.mixin;
 import com.iafenvoy.resourceworld.MixinCache;
 import com.iafenvoy.resourceworld.config.ResourceWorldData;
 import com.iafenvoy.resourceworld.config.WorldConfig;
-import com.iafenvoy.resourceworld.data.ResourceWorldHelper;
 import net.minecraft.world.border.WorldBorder;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -23,7 +22,7 @@ public abstract class WorldBorderMixin {
     private void forceSetBorder(CallbackInfo ci) {
         if (MixinCache.CURRENT_TICKING_WORLD == null) return;
         ResourceWorldData data = WorldConfig.get(MixinCache.CURRENT_TICKING_WORLD);
-        if (data == null || ResourceWorldHelper.isNotResourceWorld(MixinCache.CURRENT_TICKING_WORLD)) return;
+        if (data == null) return;
         ResourceWorldData.Settings settings = data.getSettings();
         this.setCenter(settings.getCenterX(), settings.getCenterZ());
         this.setSize(settings.getRange() * 2);

@@ -48,7 +48,7 @@ public abstract class ServerWorldMixin extends World {
         else MixinCache.CURRENT_TICKING_WORLD = this.getRegistryKey();
     }
 
-    @Inject(method = "tick", at = @At("RETURN"))
+    @Inject(method = "tick", at = @At("TAIL"))
     private void afterTick(CallbackInfo ci) {
         MixinCache.CURRENT_TICKING_WORLD = null;
     }

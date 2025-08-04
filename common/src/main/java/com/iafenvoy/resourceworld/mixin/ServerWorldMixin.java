@@ -4,6 +4,7 @@ import com.iafenvoy.resourceworld.MixinCache;
 import com.iafenvoy.resourceworld.ResourceWorld;
 import com.iafenvoy.resourceworld.config.WorldConfig;
 import com.iafenvoy.resourceworld.data.ResourceWorldHelper;
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.entry.RegistryEntry;
@@ -26,6 +27,12 @@ import java.util.function.Supplier;
 public abstract class ServerWorldMixin extends World {
     protected ServerWorldMixin(MutableWorldProperties properties, RegistryKey<World> registryRef, DynamicRegistryManager registryManager, RegistryEntry<DimensionType> dimensionEntry, Supplier<Profiler> profiler, boolean isClient, boolean debugWorld, long biomeAccess, int maxChainedNeighborUpdates) {
         super(properties, registryRef, registryManager, dimensionEntry, profiler, isClient, debugWorld, biomeAccess, maxChainedNeighborUpdates);
+    }
+
+    @ModifyExpressionValue(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/gen/GeneratorOptions;getSeed()J"))
+    private long handleResourceWorldCreatingSeeds(long original) {
+        long seed = WorldConfig.getSeed(this.getRegistryKey());
+        return seed != 0 ? seed : original;
     }
 
     @Inject(method = "getSeed", at = @At("HEAD"), cancellable = true)

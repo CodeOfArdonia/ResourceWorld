@@ -140,7 +140,7 @@ public final class ResourceCommand {
             throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world")).create();
         long delta = COOLDOWNS.getOrDefault(player, 0) + data.getSettings().getCooldown() * 1000L - System.currentTimeMillis();
         if (delta > 0)
-            throw new CommandException(ServerI18n.translateToLiteral(source, "message.resource_world.teleport_cooldown", String.valueOf(delta / 1000)));
+            throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(source, "message.resource_world.teleport_cooldown", String.valueOf(delta / 1000))).create();
         source.sendMessage(ServerI18n.translateToLiteral(source, "message.resource_world.finding_position"));
         BlockPos pos = PositionLocator.locate(world, data);
         if (pos == null)

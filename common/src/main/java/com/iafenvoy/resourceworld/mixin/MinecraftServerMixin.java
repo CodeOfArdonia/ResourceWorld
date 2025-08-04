@@ -85,7 +85,7 @@ public abstract class MinecraftServerMixin extends ThreadExecutor<ServerTask> im
             long m = BiomeAccess.hashSeed(l);
             ServerWorld serverWorld = this.worlds.get(World.OVERWORLD);
             UnmodifiableLevelProperties unmodifiableLevelProperties = new UnmodifiableLevelProperties(this.saveProperties, serverWorldProperties);
-            ServerWorld serverWorld2 = new ServerWorld((MinecraftServer) (Object) this, this.workerExecutor, this.session, unmodifiableLevelProperties, key, registry.get(worldOption), new WorldGenerationProgressTracker(16), bl, m, ImmutableList.of(), false, null);
+            ServerWorld serverWorld2 = new ServerWorld((MinecraftServer) (Object) this, this.workerExecutor, this.session, unmodifiableLevelProperties, key, registry.get(worldOption), WorldGenerationProgressTracker.create(16), bl, m, ImmutableList.of(), false, null);
             this.worlds.put(key, serverWorld2);
             MixinCache.WORLD_CHANGE_CALLBACKS.forEach(x -> x.accept((MinecraftServer) (Object) this));
             return true;

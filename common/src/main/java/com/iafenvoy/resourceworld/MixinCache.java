@@ -11,6 +11,8 @@ import java.util.function.Consumer;
 
 public final class MixinCache {
     @Nullable
+    public static MinecraftServer SERVER;
+    @Nullable
     public static RegistryKey<World> CURRENT_TICKING_WORLD;
     public static final List<Consumer<MinecraftServer>> WORLD_CHANGE_CALLBACKS = new CopyOnWriteArrayList<>();
 }

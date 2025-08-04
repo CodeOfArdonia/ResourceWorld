@@ -94,6 +94,7 @@ public final class ResourceWorldData {
         private int cooldown;
         private boolean hideSeedHash;
         private boolean allowHomeCommand;
+        private boolean worldBorderInfoDirty = false;
 
         public Settings() {
             this(0, 0, 4096, Optional.empty(), 30, false, true);
@@ -107,6 +108,7 @@ public final class ResourceWorldData {
             this.cooldown = cooldown;
             this.hideSeedHash = hideSeedHash;
             this.allowHomeCommand = allowHomeCommand;
+            this.worldBorderInfoDirty = true;
         }
 
         public int getCenterX() {
@@ -115,6 +117,7 @@ public final class ResourceWorldData {
 
         public void setCenterX(int centerX) {
             this.centerX = centerX;
+            this.worldBorderInfoDirty = true;
         }
 
         public int getCenterZ() {
@@ -123,6 +126,7 @@ public final class ResourceWorldData {
 
         public void setCenterZ(int centerZ) {
             this.centerZ = centerZ;
+            this.worldBorderInfoDirty = true;
         }
 
         public int getRange() {
@@ -131,6 +135,7 @@ public final class ResourceWorldData {
 
         public void setRange(int range) {
             this.range = range;
+            this.worldBorderInfoDirty = true;
         }
 
         public Optional<BlockPos> getSpawnPoint() {
@@ -163,6 +168,12 @@ public final class ResourceWorldData {
 
         public void setAllowHomeCommand(boolean allowHomeCommand) {
             this.allowHomeCommand = allowHomeCommand;
+        }
+
+        public boolean isWorldBorderInfoDirty() {
+            boolean b = this.worldBorderInfoDirty;
+            this.worldBorderInfoDirty = false;
+            return b;
         }
     }
 }

@@ -30,6 +30,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 
 @Mixin(MinecraftServer.class)
@@ -60,7 +61,7 @@ public abstract class MinecraftServerMixin extends ThreadExecutor<ServerTask> im
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void onServerStart(CallbackInfo ci) {
-        WorldConfig.bootstrap((MinecraftServer) (Object) this);
+        WorldConfig.bootstrap(MixinCache.SERVER = (MinecraftServer) (Object) this);
     }
 
     @Inject(method = "createWorlds", at = @At("RETURN"))
@@ -71,6 +72,7 @@ public abstract class MinecraftServerMixin extends ThreadExecutor<ServerTask> im
     @Inject(method = "stop", at = @At("HEAD"))
     private void onServerStop(CallbackInfo ci) {
         WorldConfig.stop();
+        MixinCache.SERVER = null;
     }
 
     @SuppressWarnings("all")
@@ -85,10 +87,8 @@ public abstract class MinecraftServerMixin extends ThreadExecutor<ServerTask> im
             long l = generatorOptions.getSeed();
             long m = BiomeAccess.hashSeed(l);
             ServerWorld serverWorld = this.worlds.get(World.OVERWORLD);
-            WorldBorder worldBorder = serverWorld.getWorldBorder();
-            RandomSequencesState randomSequencesState = serverWorld.getRandomSequences();
             UnmodifiableLevelProperties unmodifiableLevelProperties = new UnmodifiableLevelProperties(this.saveProperties, serverWorldProperties);
-            ServerWorld serverWorld2 = new ServerWorld((MinecraftServer) (Object) this, this.workerExecutor, this.session, unmodifiableLevelProperties, key, registry.get(worldOption), new WorldGenerationProgressTracker(16), bl, m, ImmutableList.of(), false, randomSequencesState);
+            ServerWorld serverWorld2 = new ServerWorld((MinecraftServer) (Object) this, this.workerExecutor, this.session, unmodifiableLevelProperties, key, registry.get(worldOption), new WorldGenerationProgressTracker(16), bl, m, ImmutableList.of(), false, null);
             this.worlds.put(key, serverWorld2);
             MixinCache.WORLD_CHANGE_CALLBACKS.forEach(x -> x.accept((MinecraftServer) (Object) this));
             return true;

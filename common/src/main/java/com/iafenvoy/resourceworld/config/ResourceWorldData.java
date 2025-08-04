@@ -94,7 +94,7 @@ public final class ResourceWorldData {
         private int cooldown;
         private boolean hideSeedHash;
         private boolean allowHomeCommand;
-        private boolean worldBorderInfoDirty = false;
+        private boolean worldBorderInfoDirty;
 
         public Settings() {
             this(0, 0, 4096, Optional.empty(), 30, false, true);

@@ -37,7 +37,7 @@ dependencies {
     common(project(path: ':common', configuration: 'namedElements')) { transitive false }
     shadowBundle project(path: ':common', configuration: 'transformProductionFabric')
 
-    modImplementation "curse.maven:server-i18n-api-1278793:6661240"
+    modImplementation "curse.maven:server-i18n-api-1278793:6683161"
 }
 
 processResources {

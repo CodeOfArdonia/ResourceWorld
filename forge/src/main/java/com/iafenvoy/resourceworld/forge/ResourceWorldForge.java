@@ -8,6 +8,7 @@ import net.minecraftforge.fml.common.Mod;
 @Mod(ResourceWorld.MOD_ID)
 public final class ResourceWorldForge {
     public ResourceWorldForge() {
+        ForgeEntryPointLoader.init();
         MixinCache.WORLD_CHANGE_CALLBACKS.add(MinecraftServer::markWorldsDirty);
     }
 }

@@ -39,3 +39,8 @@ Root command: `/resourceworld`
 - `hideSeedHash`: Whether hide resource world seed hash from players, open this can partly prevent seed cracking but may
   cause wrong biome sounds and sky colors.
 - `allowHomeCommand`: Whether allow using `/resource home` command.
+
+### Developer Usage
+
+If you want to customize the dimension random teleport locator, create a class implement `RandomTeleportEntrypoint`,
+then annotate with `@RandomTeleportProvider`(forge) or write into entrypoint `random_teleport_locator`(fabric)

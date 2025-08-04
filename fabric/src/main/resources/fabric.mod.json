@@ -14,6 +14,9 @@
   "icon": "logo.png",
   "environment": "*",
   "entrypoints": {
+    "main": [
+      "com.iafenvoy.resourceworld.fabric.ResourceWorldFabric"
+    ]
   },
   "accessWidener": "resource_world.accesswidener",
   "mixins": [

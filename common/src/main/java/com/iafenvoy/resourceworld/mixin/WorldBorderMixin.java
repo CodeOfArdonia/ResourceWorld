@@ -3,6 +3,7 @@ package com.iafenvoy.resourceworld.mixin;
 import com.iafenvoy.resourceworld.MixinCache;
 import com.iafenvoy.resourceworld.config.ResourceWorldData;
 import com.iafenvoy.resourceworld.config.WorldConfig;
+import net.minecraft.network.packet.s2c.play.WorldBorderInitializeS2CPacket;
 import net.minecraft.world.border.WorldBorder;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -24,7 +25,11 @@ public abstract class WorldBorderMixin {
         ResourceWorldData data = WorldConfig.get(MixinCache.CURRENT_TICKING_WORLD);
         if (data == null) return;
         ResourceWorldData.Settings settings = data.getSettings();
-        this.setCenter(settings.getCenterX(), settings.getCenterZ());
-        this.setSize(settings.getRange() * 2);
+        if (settings.isWorldBorderInfoDirty()) {
+            this.setCenter(settings.getCenterX(), settings.getCenterZ());
+            this.setSize(settings.getRange() * 2);
+            if (MixinCache.SERVER != null)
+                MixinCache.SERVER.getPlayerManager().sendToDimension(new WorldBorderInitializeS2CPacket((WorldBorder) (Object) this), MixinCache.CURRENT_TICKING_WORLD);
+        }
     }
 }

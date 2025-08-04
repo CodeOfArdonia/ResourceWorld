@@ -1,6 +1,7 @@
 package com.iafenvoy.resourceworld.config;
 
 import com.google.gson.JsonParser;
+import com.iafenvoy.resourceworld.MixinCache;
 import com.iafenvoy.resourceworld.ResourceWorld;
 import com.iafenvoy.resourceworld.data.ResourceWorldHelper;
 import com.mojang.brigadier.suggestion.Suggestions;
@@ -32,12 +33,9 @@ public class WorldConfig {
     private static final WorldSavePath RESOURCE_WORLD_DATA = new WorldSavePath("resource_world.json");
     private static final Random RANDOM = new Random();
     private static final Map<String, ResourceWorldData> DATA = new HashMap<>();
-    @Nullable
-    private static MinecraftServer SERVER;
 
     @ApiStatus.Internal
     public static void bootstrap(MinecraftServer server) {
-        SERVER = server;
         DATA.clear();
         try {
             DATA.putAll(CODEC.parse(JsonOps.INSTANCE, JsonParser.parseString(FileUtils.readFileToString(server.getSavePath(RESOURCE_WORLD_DATA).toFile(), StandardCharsets.UTF_8))).resultOrPartial(ResourceWorld.LOGGER::error).orElseThrow());
@@ -62,7 +60,6 @@ public class WorldConfig {
     @ApiStatus.Internal
     public static void stop() {
         saveConfig();
-        SERVER = null;
     }
 
     public static ResourceWorldData create(String id, Identifier target) {
@@ -106,9 +103,9 @@ public class WorldConfig {
     }
 
     public static void saveConfig() {
-        if (SERVER == null) return;
+        if (MixinCache.SERVER == null) return;
         try {
-            FileUtils.write(SERVER.getSavePath(RESOURCE_WORLD_DATA).toFile(), CODEC.encodeStart(JsonOps.INSTANCE, DATA).resultOrPartial(ResourceWorld.LOGGER::error).orElseThrow().toString(), StandardCharsets.UTF_8);
+            FileUtils.write(MixinCache.SERVER.getSavePath(RESOURCE_WORLD_DATA).toFile(), CODEC.encodeStart(JsonOps.INSTANCE, DATA).resultOrPartial(ResourceWorld.LOGGER::error).orElseThrow().toString(), StandardCharsets.UTF_8);
         } catch (Exception ex) {
             ResourceWorld.LOGGER.error("Failed to create config", ex);
         }

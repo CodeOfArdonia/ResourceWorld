@@ -1,3 +1,5 @@
+import org.gradle.kotlin.dsl.dependencies
+
 plugins {
     id("net.neoforged.moddev")
     id("dev.kikugie.postprocess.jsonlang")
@@ -14,6 +16,13 @@ jsonlang {
 
 repositories {
     maven("https://maven.parchmentmc.org") { name = "ParchmentMC" }
+    maven("https://maven.kessokuteatime.work/releases") { name = "KKT Maven" }
+    maven("https://api.modrinth.com/maven") { name = "Modrinth Maven" }
+}
+
+dependencies{
+    implementation("com.iafenvoy.integration:integration-neoforge:0.2")?.let { jarJar(it) }
+    implementation("maven.modrinth:server-i18n-api:${property("deps.server_i18n_api")}")
 }
 
 neoForge {

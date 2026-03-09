@@ -17,6 +17,7 @@
   "entrypoints": {
   },
   "mixins": [
+    "resource_world.mixins.json"
   ],
   "depends": {
     "minecraft": [${supported_minecraft_versions}]

@@ -1,0 +1,23 @@
+{
+  "required": true,
+  "package": "com.iafenvoy.resourceworld.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "minVersion": "0.8",
+  "client": [
+  ],
+  "mixins": [
+    "CommandsMixin",
+    "CommonPlayerSpawnInfoMixin",
+    "DifficultyCommandMixin",
+    "GameRuleCommandMixin",
+    "GameRules$ValueAccessor",
+    "MinecraftServerMixin",
+    "PlayerListMixin",
+    "ServerLevelMixin",
+    "WorldBorderMixin",
+    "LevelResourceAccessor"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

@@ -1,22 +1,47 @@
-# Stonecutter Template
+# Resource World
 
-This is a multi-loader mod template for Fabric, Forge and NeoForge
+This mod can create resource worlds. These worlds can reset standalone from main worlds.
 
-## Supported versions
+**Logically support modded dimensions.**
 
-- Fabric 1.14+
-- Forge 1.17+
-- NeoForge 1.20.5+
+## Features
 
-## Before Use
+- Create separated resource worlds from any exists dimensions
+- Standalone seeds, game rules, difficulties and world borders
+- Reset standalone
 
-- Configure your project's metadata in `gradle.properties`.
-- If you want to use mixins, uncomment mixin processors in `build.forge.gradle.kts`, create mixin files and add to
-  `fabric.mod.json` and `neoforge.mods.toml`
+## Commands
 
-## Useful Links
+Root command: `/resourceworld`
 
-- Stonecutter docs: https://stonecutter.kikugie.dev/
-- Versions select guideline: https://stonecutter.kikugie.dev/wiki/start/#version-compatibility
-- Ceres (Fast dependencies search): https://ceres.mcdev.tech/
-- Parchment versions index: https://parchmentmc.org/docs/getting-started
+### Player Commands
+
+- `/resourceworld home`: Teleport to your spawn point. This is the only way to exit resource worlds without other mods.
+- `/resourceworld tp <world id>`: Random teleport to resource worlds.
+
+### Admin Commands
+
+- `/resourceworld create <world id> <target dimension> (<seed>)`: Create a resource world with specific dimension
+  options. Seed is optional, leave blank for random seed.
+- `/resourceworld delete <world id>`: Permanently delete a resource world.
+- `/resourceworld reset <world id>`: Reset specific resource world. (Delete previous one and create new with different
+  seed.)
+- `/resourceworld enable/disable <world id>`: Enable/Disable specific resource world.
+- `/resourceworld settings <world id> <option> get/set`: Configure resource world settings.
+
+#### All available settings
+
+- `centerX`: Center X of the world border.
+- `centerZ`: Center Z of the world border.
+- `range`: World border radius.
+- `spawnPoint`: Resource world spawn point.
+- `cooldown`: `/resourceworld tp` cooldown.
+- `hideSeedHash`: Whether hide resource world seed hash from players, open this can partly prevent seed cracking but may
+  cause wrong biome sounds and sky colors.
+- `allowHomeCommand`: Whether allow using `/resource home` command.
+
+### Developer Usage
+
+If you want to customize the dimension random teleport locator, create a class implement `RandomTeleportEntrypoint`,
+then annotate with `@EntryPointProvider(slug="random_teleport_locator")`(forge) or write into entrypoint
+`random_teleport_locator`(fabric)

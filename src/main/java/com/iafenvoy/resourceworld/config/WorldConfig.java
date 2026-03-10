@@ -31,7 +31,7 @@ import java.util.function.BiConsumer;
 
 public class WorldConfig {
     private static final Codec<Map<String, ResourceWorldData>> CODEC = Codec.unboundedMap(Codec.STRING, ResourceWorldData.CODEC);
-    private static final LevelResource RESOURCE_WORLD_DATA = LevelResourceAccessor.newInstance("resource_world.json");
+    private static final LevelResource RESOURCE_WORLD_DATA = LevelResourceAccessor.resourceWorld$newInstance("resource_world.json");
     private static final Random RANDOM = new Random();
     private static final Map<String, ResourceWorldData> DATA = new HashMap<>();
 

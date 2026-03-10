@@ -7,19 +7,21 @@ import com.iafenvoy.resourceworld.config.WorldConfig;
 import com.iafenvoy.resourceworld.mixin.LevelResourceAccessor;
 import com.iafenvoy.resourceworld.util.RLUtil;
 import com.iafenvoy.server.i18n.ServerI18n;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.players.PlayerList;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.LevelResource;
 import org.apache.commons.io.FileUtils;
 
 import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 public class ResourceWorldHelper {
@@ -38,7 +40,7 @@ public class ResourceWorldHelper {
     }
 
     public static LevelResource getDimensionFolder(ResourceKey<Level> key) {
-        return LevelResourceAccessor.newInstance("dimensions/%s/%s".formatted(key.location().getNamespace(), key.location().getPath()));
+        return LevelResourceAccessor.resourceWorld$newInstance("dimensions/%s/%s".formatted(key.location().getNamespace(), key.location().getPath()));
     }
 
     public static boolean createWorld(MinecraftServer server, ResourceKey<Level> key, ResourceLocation worldOption, long seed) {
@@ -54,17 +56,10 @@ public class ResourceWorldHelper {
 
     public static void teleportOut(ServerLevel world) {
         MinecraftServer server = world.getServer();
-        ServerLevel overworld = server.overworld();
-        for (ServerPlayer player : server.getPlayerList().getPlayers())
-            if (player.level().dimension().equals(world.dimension())) {
-                BlockPos spawnPoint = player.getRespawnPosition();
-                ServerLevel spawnDimension = server.getLevel(player.getRespawnDimension());
-                if (spawnPoint == null) {
-                    spawnPoint = overworld.getSharedSpawnPos();
-                    spawnDimension = overworld;
-                }
-                player.teleportTo(spawnDimension, spawnPoint.getX() + 0.5, spawnPoint.getY(), spawnPoint.getZ() + 0.5, player.getYRot(), player.getXRot());
-            }
+        PlayerList playerList = server.getPlayerList();
+        for (ServerPlayer player : playerList.getPlayers())
+            if (Objects.equals(player.level().dimension(), world.dimension()))
+                playerList.respawn(player, true/*? >=1.21 {*/, Entity.RemovalReason.CHANGED_DIMENSION/*?}*/);
     }
 
     public static void deleteWorld(MinecraftServer server, ServerLevel world) {

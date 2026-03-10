@@ -15,6 +15,7 @@ import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.storage.WritableLevelData;
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -61,12 +62,12 @@ public abstract class ServerLevelMixin extends Level {
     }
 
     @Override
-    public GameRules getGameRules() {
+    public @NotNull GameRules getGameRules() {
         return WorldConfig.getGameRules(this.dimension()).orElse(super.getGameRules());
     }
 
     @Override
-    public Difficulty getDifficulty() {
+    public @NotNull Difficulty getDifficulty() {
         return WorldConfig.getDifficulty(this.dimension()).orElse(super.getDifficulty());
     }
 }

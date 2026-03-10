@@ -1,6 +1,6 @@
 package com.iafenvoy.resourceworld.mixin;
 
-import com.iafenvoy.resourceworld.ResourceCommand;
+import com.iafenvoy.resourceworld.ResourceWorldCommand;
 import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -19,6 +19,6 @@ public class CommandsMixin {
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void registerCommand(CallbackInfo ci) {
-        ResourceCommand.register(this.dispatcher);
+        ResourceWorldCommand.register(this.dispatcher);
     }
 }

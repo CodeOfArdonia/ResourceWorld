@@ -12,9 +12,9 @@ public final class GameRuleCodec {
         GameRules gameRules = new GameRules();
         GameRules.visitGameRuleTypes(new GameRules.GameRuleTypeVisitor() {
             @Override
-            public <T extends GameRules.Value<T>> void visit(GameRules.Key<T> key, GameRules.Type<T> type) {
+            public <T extends GameRules.Value<T>> void visit(GameRules.@NotNull Key<T> key, GameRules.@NotNull Type<T> type) {
                 String name = key.getId();
-                if (m.containsKey(name)) ((GameRules$ValueAccessor) gameRules.getRule(key)).deserialize(m.get(name));
+                if (m.containsKey(name)) ((GameRules$ValueAccessor) gameRules.getRule(key)).resourceWorld$deserialize(m.get(name));
             }
         });
         return gameRules;

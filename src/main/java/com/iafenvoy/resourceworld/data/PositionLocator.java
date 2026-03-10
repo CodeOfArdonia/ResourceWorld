@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.function.BiFunction;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
@@ -46,7 +47,7 @@ public class PositionLocator {
         ImmutableMap.Builder<ResourceLocation, BiFunction<Level, ResourceWorldData, BlockPos>> builder = ImmutableMap.builder();
         builder.put(Level.NETHER.location(), (world, data) -> {
             BlockPos pos = toValidPos(randomPos(world, data, 100), world);
-            if (pos != null && world.getBlockState(pos.below()).liquid())
+            if (pos != null && !world.getFluidState(pos.below()).isEmpty())
                 world.setBlockAndUpdate(pos.below(), Blocks.NETHERRACK.defaultBlockState());
             return pos;
         });

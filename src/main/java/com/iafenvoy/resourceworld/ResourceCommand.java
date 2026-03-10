@@ -5,6 +5,7 @@ import com.iafenvoy.resourceworld.config.WorldConfig;
 import com.iafenvoy.resourceworld.data.PositionLocator;
 import com.iafenvoy.resourceworld.data.ResourceWorldHelper;
 import com.iafenvoy.resourceworld.util.CommandHelper;
+import com.iafenvoy.resourceworld.util.RLUtil;
 import com.iafenvoy.server.i18n.ServerI18n;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
@@ -37,8 +38,8 @@ import static net.minecraft.commands.Commands.argument;
 import static net.minecraft.commands.Commands.literal;
 
 public final class ResourceCommand {
-    private static final SuggestionProvider<CommandSourceStack> WORLD = SuggestionProviders.register(ResourceLocation.fromNamespaceAndPath(ResourceWorld.MOD_ID, "world"), (context, builder) -> WorldConfig.appendSuggestions(builder));
-    private static final SuggestionProvider<CommandSourceStack> DIMENSIONS = SuggestionProviders.register(ResourceLocation.fromNamespaceAndPath(ResourceWorld.MOD_ID, "dimensions"), (context, builder) -> context.getSource() instanceof CommandSourceStack source ? SharedSuggestionProvider.suggestResource(source.registryAccess().registryOrThrow(Registries.LEVEL_STEM).holders().map(Holder.Reference::key).map(ResourceKey::location), builder) : context.getSource().customSuggestion(context));
+    private static final SuggestionProvider<CommandSourceStack> WORLD = SuggestionProviders.register(RLUtil.id("world"), (context, builder) -> WorldConfig.appendSuggestions(builder));
+    private static final SuggestionProvider<CommandSourceStack> DIMENSIONS = SuggestionProviders.register(RLUtil.id("dimensions"), (context, builder) -> context.getSource() instanceof CommandSourceStack source ? SharedSuggestionProvider.suggestResource(source.registryAccess().registryOrThrow(Registries.LEVEL_STEM).holders().map(Holder.Reference::key).map(ResourceKey::location), builder) : context.getSource().customSuggestion(context));
     private static final Object2LongMap<ServerPlayer> COOLDOWNS = new Object2LongLinkedOpenHashMap<>();
     private static final Object2LongMap<String> DELETE_CONFIRM = new Object2LongLinkedOpenHashMap<>();
 

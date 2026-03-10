@@ -58,7 +58,7 @@ public abstract class MinecraftServerMixin extends BlockableEventLoop<TickTask> 
     private LayeredRegistryAccess<RegistryLayer> registries;
 
     //? !fabric {
-    @Shadow
+    @Shadow(remap = false)
     public abstract void markWorldsDirty();
     //?}
 
@@ -98,7 +98,7 @@ public abstract class MinecraftServerMixin extends BlockableEventLoop<TickTask> 
             long l = generatorOptions.seed();
             long m = BiomeManager.obfuscateSeed(l);
             DerivedLevelData unmodifiableLevelProperties = new DerivedLevelData(this.worldData, serverWorldProperties);
-            ServerLevel serverWorld2 = new ServerLevel(this.resourceWorld$self(), this.executor, this.storageSource, unmodifiableLevelProperties, key, registry.get(worldOption), StoringChunkProgressListener.createFromGameruleRadius(16), bl, m, ImmutableList.of(), false, null);
+            ServerLevel serverWorld2 = new ServerLevel(this.resourceWorld$self(), this.executor, this.storageSource, unmodifiableLevelProperties, key, registry.get(worldOption), /*? >=1.20.5 {*/StoringChunkProgressListener.createFromGameruleRadius/*?} else {*//*new StoringChunkProgressListener*//*?}*/(16), bl, m, ImmutableList.of(), false, null);
             this.levels.put(key, serverWorld2);
             //? !fabric {
             this.markWorldsDirty();

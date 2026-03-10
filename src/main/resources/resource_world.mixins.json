@@ -7,7 +7,7 @@
   ],
   "mixins": [
     "CommandsMixin",
-    "CommonPlayerSpawnInfoMixin",
+    "HideSeedHashToClientMixin",
     "DifficultyCommandMixin",
     "GameRuleCommandMixin",
     "GameRules$ValueAccessor",

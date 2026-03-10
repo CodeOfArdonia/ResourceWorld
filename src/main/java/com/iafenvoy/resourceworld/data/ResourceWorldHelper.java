@@ -5,6 +5,7 @@ import com.iafenvoy.resourceworld.accessor.MinecraftServerAccessor;
 import com.iafenvoy.resourceworld.config.ResourceWorldData;
 import com.iafenvoy.resourceworld.config.WorldConfig;
 import com.iafenvoy.resourceworld.mixin.LevelResourceAccessor;
+import com.iafenvoy.resourceworld.util.RLUtil;
 import com.iafenvoy.server.i18n.ServerI18n;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
@@ -33,7 +34,7 @@ public class ResourceWorldHelper {
     }
 
     public static ResourceKey<Level> toRegistryKey(String id) {
-        return ResourceKey.create(Registries.DIMENSION, ResourceLocation.fromNamespaceAndPath(ResourceWorld.MOD_ID, id));
+        return ResourceKey.create(Registries.DIMENSION, RLUtil.id(id));
     }
 
     public static LevelResource getDimensionFolder(ResourceKey<Level> key) {

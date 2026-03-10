@@ -3,6 +3,7 @@ package com.iafenvoy.resourceworld.config;
 import com.google.gson.JsonParser;
 import com.iafenvoy.resourceworld.MixinCache;
 import com.iafenvoy.resourceworld.ResourceWorld;
+import com.iafenvoy.resourceworld.config.generate.GenerateOption;
 import com.iafenvoy.resourceworld.data.ResourceWorldHelper;
 import com.iafenvoy.resourceworld.mixin.LevelResourceAccessor;
 import com.mojang.brigadier.suggestion.Suggestions;
@@ -10,11 +11,11 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.storage.LevelResource;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.ApiStatus;
@@ -48,9 +49,9 @@ public class WorldConfig {
     }
 
     @ApiStatus.Internal
-    public static void initResourceWorld(BiConsumer<ResourceKey<Level>, ResourceLocation> consumer) {
+    public static void initResourceWorld(BiConsumer<ResourceKey<Level>, GenerateOption> consumer) {
         for (Map.Entry<String, ResourceWorldData> entry : DATA.entrySet())
-            consumer.accept(ResourceWorldHelper.toRegistryKey(entry.getKey()), entry.getValue().getTargetWorld());
+            consumer.accept(ResourceWorldHelper.toRegistryKey(entry.getKey()), entry.getValue().getGenerateOption());
     }
 
     public static CompletableFuture<Suggestions> appendSuggestions(SuggestionsBuilder builder) {
@@ -63,8 +64,8 @@ public class WorldConfig {
         saveConfig();
     }
 
-    public static ResourceWorldData create(String id, ResourceLocation target) {
-        ResourceWorldData data = new ResourceWorldData(target);
+    public static ResourceWorldData create(String id, GenerateOption stem) {
+        ResourceWorldData data = new ResourceWorldData(stem);
         data.setEnabled(true);
         DATA.put(id, data);
         saveConfig();

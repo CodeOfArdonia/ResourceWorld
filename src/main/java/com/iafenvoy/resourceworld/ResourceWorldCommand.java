@@ -2,6 +2,8 @@ package com.iafenvoy.resourceworld;
 
 import com.iafenvoy.resourceworld.config.ResourceWorldData;
 import com.iafenvoy.resourceworld.config.WorldConfig;
+import com.iafenvoy.resourceworld.config.generate.FlatGenerateOption;
+import com.iafenvoy.resourceworld.config.generate.MirrorGenerateOption;
 import com.iafenvoy.resourceworld.data.PositionLocator;
 import com.iafenvoy.resourceworld.data.ResourceWorldHelper;
 import com.iafenvoy.resourceworld.util.CommandHelper;
@@ -19,13 +21,17 @@ import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import it.unimi.dsi.fastutil.objects.Object2LongLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
+import net.minecraft.client.gui.screens.PresetFlatWorldScreen;
+import net.minecraft.client.gui.screens.worldselection.WorldCreationContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.SharedSuggestionProvider;
-import net.minecraft.commands.arguments.ResourceLocationArgument;
+import net.minecraft.commands.arguments.*;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
 import net.minecraft.commands.synchronization.SuggestionProviders;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderGetter;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -33,7 +39,14 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.dimension.LevelStem;
+import net.minecraft.world.level.levelgen.flat.FlatLevelGeneratorSettings;
+import net.minecraft.world.level.levelgen.placement.PlacedFeature;
+import net.minecraft.world.level.levelgen.structure.StructureSet;
 import org.jetbrains.annotations.NotNull;
 
 import static net.minecraft.commands.Commands.argument;
@@ -68,11 +81,17 @@ public final class ResourceWorldCommand {
                 .then(literal("create")
                         .requires(ctx -> ctx.hasPermission(4))
                         .then(argument("world", StringArgumentType.word())
-                                .then(argument("target", ResourceLocationArgument.id())
-                                        .suggests(DIMENSIONS)
-                                        .then(argument("seed", LongArgumentType.longArg()).executes(ctx -> createWorld(ctx, LongArgumentType.getLong(ctx, "seed"))))
-                                        .executes(ctx -> createWorld(ctx, 0))
-                                )))
+                                .then(literal("mirror")
+                                        .then(argument("target", ResourceLocationArgument.id())
+                                                .suggests(DIMENSIONS)
+                                                .then(argument("seed", LongArgumentType.longArg()).executes(ctx -> createMirrorWorld(ctx, LongArgumentType.getLong(ctx, "seed"))))
+                                                .executes(ctx -> createMirrorWorld(ctx, 0))
+                                        ))
+                                .then(literal("flat")
+                                        .then(argument("preset", StringArgumentType.string())
+                                                .then(argument("seed", LongArgumentType.longArg()).executes(ctx -> createFlatWorld(ctx, LongArgumentType.getLong(ctx, "seed"))))
+                                                .executes(ctx -> createFlatWorld(ctx, 0))
+                                        ))))
                 .then(literal("reset")
                         .requires(ctx -> ctx.hasPermission(4))
                         .then(argument("world", StringArgumentType.word())
@@ -97,7 +116,7 @@ public final class ResourceWorldCommand {
                                 .suggests(WORLD)
                                 .executes(ctx -> setEnable(ctx, false))
                         ))
-                .then(literal("settings")
+                .then(literal("preset")
                         .requires(ctx -> ctx.hasPermission(4))
                         .then(settings))
         );
@@ -138,13 +157,16 @@ public final class ResourceWorldCommand {
         return 1;
     }
 
-    private static int createWorld(CommandContext<CommandSourceStack> ctx, long seed) throws CommandSyntaxException {
-        String id = StringArgumentType.getString(ctx, "world");
+    private static int createMirrorWorld(CommandContext<CommandSourceStack> ctx, long seed) throws CommandSyntaxException {
         CommandSourceStack source = ctx.getSource();
-        if (WorldConfig.get(ResourceWorldHelper.toRegistryKey(id)) != null)
-            throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(source, "message.resource_world.duplicate_id")).create();
-        ResourceLocation target = ResourceLocationArgument.getId(ctx, "target");
-        if (ResourceWorldHelper.createWorld(ctx.getSource().getServer(), ResourceWorldHelper.toRegistryKey(id), target, seed))
+        if (ResourceWorldHelper.createWorld(source.getServer(), createKey(ctx), new MirrorGenerateOption(ResourceKey.create(Registries.LEVEL_STEM, ResourceLocationArgument.getId(ctx, "target"))), seed))
+            source.sendSystemMessage(ServerI18n.translateToLiteral(source, "message.resource_world.success"));
+        return 1;
+    }
+
+    private static int createFlatWorld(CommandContext<CommandSourceStack> ctx, long seed) throws CommandSyntaxException {
+        CommandSourceStack source = ctx.getSource();
+        if (ResourceWorldHelper.createWorld(source.getServer(), createKey(ctx), new FlatGenerateOption(StringArgumentType.getString(ctx, "preset")), seed))
             source.sendSystemMessage(ServerI18n.translateToLiteral(source, "message.resource_world.success"));
         return 1;
     }
@@ -176,6 +198,15 @@ public final class ResourceWorldCommand {
         data.setEnabled(enable);
         source.sendSystemMessage(ServerI18n.translateToLiteral(source, "message.resource_world.success"));
         return 1;
+    }
+
+    @NotNull
+    private static ResourceKey<Level> createKey(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        String id = StringArgumentType.getString(ctx, "world");
+        CommandSourceStack source = ctx.getSource();
+        if (WorldConfig.get(ResourceWorldHelper.toRegistryKey(id)) != null)
+            throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(source, "message.resource_world.duplicate_id")).create();
+        return ResourceWorldHelper.toRegistryKey(id);
     }
 
     @NotNull

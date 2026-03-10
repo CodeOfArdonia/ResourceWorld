@@ -7,15 +7,15 @@
   ],
   "mixins": [
     "CommandsMixin",
-    "HideSeedHashToClientMixin",
     "DifficultyCommandMixin",
     "GameRuleCommandMixin",
     "GameRules$ValueAccessor",
+    "HideSeedHashToClientMixin",
+    "LevelResourceAccessor",
     "MinecraftServerMixin",
     "PlayerListMixin",
     "ServerLevelMixin",
-    "WorldBorderMixin",
-    "LevelResourceAccessor"
+    "WorldBorderMixin"
   ],
   "injectors": {
     "defaultRequire": 1

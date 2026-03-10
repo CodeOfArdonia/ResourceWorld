@@ -5,6 +5,8 @@ import com.iafenvoy.resourceworld.MixinCache;
 import com.iafenvoy.resourceworld.ResourceWorld;
 import com.iafenvoy.resourceworld.accessor.MinecraftServerAccessor;
 import com.iafenvoy.resourceworld.config.WorldConfig;
+import com.iafenvoy.resourceworld.config.generate.GenerateOption;
+import net.minecraft.core.Holder;
 import net.minecraft.core.LayeredRegistryAccess;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
@@ -18,6 +20,8 @@ import net.minecraft.server.level.progress.StoringChunkProgressListener;
 import net.minecraft.util.thread.BlockableEventLoop;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.BiomeManager;
+import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.WorldOptions;
 import net.minecraft.world.level.storage.DerivedLevelData;
@@ -88,18 +92,15 @@ public abstract class MinecraftServerMixin extends BlockableEventLoop<TickTask> 
     }
 
     @Override
-    public boolean resourceWorld$createLevel(ResourceKey<Level> key, ResourceLocation worldOption) {
+    public boolean resourceWorld$createLevel(ResourceKey<Level> key, GenerateOption option) {
         try {
-            ServerLevelData serverWorldProperties = this.worldData.overworldData();
+            ServerLevelData data = this.worldData.overworldData();
             boolean bl = this.worldData.isDebugWorld();
-            Registry<LevelStem> registry = this.registries.compositeAccess().registryOrThrow(Registries.LEVEL_STEM);
-            if (!registry.containsKey(worldOption)) return false;
             WorldOptions generatorOptions = this.worldData.worldGenOptions();
             long l = generatorOptions.seed();
             long m = BiomeManager.obfuscateSeed(l);
-            DerivedLevelData unmodifiableLevelProperties = new DerivedLevelData(this.worldData, serverWorldProperties);
-            ServerLevel serverWorld2 = new ServerLevel(this.resourceWorld$self(), this.executor, this.storageSource, unmodifiableLevelProperties, key, registry.get(worldOption), /*? >=1.20.5 {*/StoringChunkProgressListener.createFromGameruleRadius/*?} else {*//*new StoringChunkProgressListener*//*?}*/(16), bl, m, ImmutableList.of(), false, null);
-            this.levels.put(key, serverWorld2);
+            DerivedLevelData unmodifiableLevelProperties = new DerivedLevelData(this.worldData, data);
+            this.levels.put(key, new ServerLevel(this.resourceWorld$self(), this.executor, this.storageSource, unmodifiableLevelProperties, key, option.createStem(this.resourceWorld$self().registryAccess()), /*? >=1.20.5 {*/StoringChunkProgressListener.createFromGameruleRadius/*?} else {*//*new StoringChunkProgressListener*//*?}*/(16), bl, m, ImmutableList.of(), false, null));
             //? !fabric {
             this.markWorldsDirty();
             //?}

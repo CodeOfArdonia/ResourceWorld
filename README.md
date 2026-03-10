@@ -21,7 +21,7 @@ Root command: `/resourceworld`
 
 ### Admin Commands
 
-- `/resourceworld create <world id> <target dimension> (<seed>)`: Create a resource world with specific dimension
+- `/resourceworld create <world id> <mirror/flat> ...`: Create a resource world with specific dimension
   options. Seed is optional, leave blank for random seed.
 - `/resourceworld delete <world id>`: Permanently delete a resource world.
 - `/resourceworld reset <world id>`: Reset specific resource world. (Delete previous one and create new with different

@@ -1,38 +1,39 @@
 package com.iafenvoy.resourceworld.config;
 
+import com.iafenvoy.resourceworld.config.generate.GenerateOption;
 import com.iafenvoy.resourceworld.util.GameRuleCodec;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.dimension.LevelStem;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
 public final class ResourceWorldData {
     public static final Codec<ResourceWorldData> CODEC = RecordCodecBuilder.create(i -> i.group(
-            ResourceLocation.CODEC.fieldOf("targetWorld").forGetter(ResourceWorldData::getTargetWorld),
+            GenerateOption.CODEC.fieldOf("generate").forGetter(ResourceWorldData::getGenerateOption),
             Codec.BOOL.fieldOf("enabled").forGetter(ResourceWorldData::isEnabled),
             Codec.LONG.fieldOf("seed").forGetter(ResourceWorldData::getSeed),
             Difficulty.CODEC.optionalFieldOf("difficulty", Difficulty.EASY).forGetter(ResourceWorldData::getDifficulty),
             GameRuleCodec.CODEC.optionalFieldOf("gamerules", new GameRules()).forGetter(ResourceWorldData::getGameRules),
             Settings.CODEC.optionalFieldOf("settings", new Settings()).forGetter(ResourceWorldData::getSettings)
     ).apply(i, ResourceWorldData::new));
-    private final ResourceLocation targetWorld;
+    private final GenerateOption generateOption;
     private boolean enabled;
     private long seed;
     private Difficulty difficulty;
     private final GameRules gameRules;
     private final Settings settings;
 
-    public ResourceWorldData(ResourceLocation targetWorld) {
-        this(targetWorld, false, 0, Difficulty.EASY, new GameRules(), new Settings());
+    public ResourceWorldData(GenerateOption generateOption) {
+        this(generateOption, false, 0, Difficulty.EASY, new GameRules(), new Settings());
     }
 
-    public ResourceWorldData(ResourceLocation targetWorld, boolean enabled, long seed, Difficulty difficulty, GameRules gameRules, Settings settings) {
-        this.targetWorld = targetWorld;
+    public ResourceWorldData(GenerateOption generateOption, boolean enabled, long seed, Difficulty difficulty, GameRules gameRules, Settings settings) {
+        this.generateOption = generateOption;
         this.enabled = enabled;
         this.seed = seed;
         this.difficulty = difficulty;
@@ -40,8 +41,8 @@ public final class ResourceWorldData {
         this.settings = settings;
     }
 
-    public ResourceLocation getTargetWorld() {
-        return this.targetWorld;
+    public GenerateOption getGenerateOption() {
+        return this.generateOption;
     }
 
     public boolean isEnabled() {

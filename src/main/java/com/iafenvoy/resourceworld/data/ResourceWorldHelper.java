@@ -4,12 +4,12 @@ import com.iafenvoy.resourceworld.ResourceWorld;
 import com.iafenvoy.resourceworld.accessor.MinecraftServerAccessor;
 import com.iafenvoy.resourceworld.config.ResourceWorldData;
 import com.iafenvoy.resourceworld.config.WorldConfig;
+import com.iafenvoy.resourceworld.config.generate.GenerateOption;
 import com.iafenvoy.resourceworld.mixin.LevelResourceAccessor;
 import com.iafenvoy.resourceworld.util.RLUtil;
 import com.iafenvoy.server.i18n.ServerI18n;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -43,15 +43,15 @@ public class ResourceWorldHelper {
         return LevelResourceAccessor.resourceWorld$newInstance("dimensions/%s/%s".formatted(key.location().getNamespace(), key.location().getPath()));
     }
 
-    public static boolean createWorld(MinecraftServer server, ResourceKey<Level> key, ResourceLocation worldOption, long seed) {
-        ResourceWorldData data = WorldConfig.create(resolveId(key), worldOption);
+    public static boolean createWorld(MinecraftServer server, ResourceKey<Level> key, GenerateOption stem, long seed) {
+        ResourceWorldData data = WorldConfig.create(resolveId(key), stem);
         if (seed != 0) data.setSeed(seed);
         else WorldConfig.newSeed(key);
-        return recreateWorld(server, key, worldOption);
+        return recreateWorld(server, key, stem);
     }
 
-    public static boolean recreateWorld(MinecraftServer server, ResourceKey<Level> key, ResourceLocation worldOption) {
-        return ((MinecraftServerAccessor) server).resourceWorld$createLevel(key, worldOption);
+    public static boolean recreateWorld(MinecraftServer server, ResourceKey<Level> key, GenerateOption option) {
+        return ((MinecraftServerAccessor) server).resourceWorld$createLevel(key, option);
     }
 
     public static void teleportOut(ServerLevel world) {
@@ -78,7 +78,7 @@ public class ResourceWorldHelper {
         WorldConfig.newSeed(key);
         unloadAndDelete(world);
         printInfo(server, "message.resource_world.creating", key);
-        recreateWorld(server, key, data.getTargetWorld());
+        recreateWorld(server, key, data.getGenerateOption());
         printInfo(server, "message.resource_world.reset", key);
         world.noSave = false;
         RESETTING.remove(key);

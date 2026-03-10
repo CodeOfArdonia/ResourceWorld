@@ -19,5 +19,6 @@
   "message.resource_world.success_remove_world_data": "成功移除世界数据",
   "message.resource_world.teleport_cooldown": "传送正在冷却，剩余时间：%s秒",
   "message.resource_world.unknown_resource_world": "未知世界索引",
+  "message.resource_world.unknown_stem": "未知的目标维度 %s",
   "message.resource_world.unload_world": "正在卸载世界..."
 }

@@ -33,6 +33,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -48,6 +49,8 @@ import net.minecraft.world.level.levelgen.flat.FlatLevelGeneratorSettings;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.minecraft.world.level.levelgen.structure.StructureSet;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Locale;
 
 import static net.minecraft.commands.Commands.argument;
 import static net.minecraft.commands.Commands.literal;
@@ -79,7 +82,7 @@ public final class ResourceWorldCommand {
                                 .executes(ResourceWorldCommand::teleport)
                         ))
                 .then(literal("create")
-                        .requires(ctx -> ctx.hasPermission(4))
+                        .requires(ctx -> ctx.hasPermission(2))
                         .then(argument("world", StringArgumentType.word())
                                 .then(literal("mirror")
                                         .then(argument("target", ResourceLocationArgument.id())
@@ -93,31 +96,31 @@ public final class ResourceWorldCommand {
                                                 .executes(ctx -> createFlatWorld(ctx, 0))
                                         ))))
                 .then(literal("reset")
-                        .requires(ctx -> ctx.hasPermission(4))
+                        .requires(ctx -> ctx.hasPermission(2))
                         .then(argument("world", StringArgumentType.word())
                                 .suggests(WORLD)
                                 .executes(ResourceWorldCommand::resetWorld)
                         ))
                 .then(literal("delete")
-                        .requires(ctx -> ctx.hasPermission(4))
+                        .requires(ctx -> ctx.hasPermission(2))
                         .then(argument("world", StringArgumentType.word())
                                 .suggests(WORLD)
                                 .executes(ResourceWorldCommand::deleteWorld)
                         ))
                 .then(literal("enable")
-                        .requires(ctx -> ctx.hasPermission(4))
+                        .requires(ctx -> ctx.hasPermission(2))
                         .then(argument("world", StringArgumentType.word())
                                 .suggests(WORLD)
                                 .executes(ctx -> setEnable(ctx, true))
                         ))
                 .then(literal("disable")
-                        .requires(ctx -> ctx.hasPermission(4))
+                        .requires(ctx -> ctx.hasPermission(2))
                         .then(argument("world", StringArgumentType.word())
                                 .suggests(WORLD)
                                 .executes(ctx -> setEnable(ctx, false))
                         ))
-                .then(literal("preset")
-                        .requires(ctx -> ctx.hasPermission(4))
+                .then(literal("settings")
+                        .requires(ctx -> ctx.hasPermission(2))
                         .then(settings))
         );
     }
@@ -127,10 +130,8 @@ public final class ResourceWorldCommand {
         ServerPlayer player = source.getPlayerOrException();
         ResourceKey<Level> key = player.level().dimension();
         ResourceWorldData data = WorldConfig.get(key);
-        if (data == null)
-            throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world")).create();
-        if (!data.getSettings().isAllowHomeCommand())
-            throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(source, "message.resource_world.not_a_resource_world")).create();
+        if (data == null) throw createException(source, "not_a_resource_world");
+        if (!data.getSettings().isAllowHomeCommand()) throw createException(source, "home_command_banned");
         source.getServer().getPlayerList().respawn(player, true/*? >=1.21 {*/, Entity.RemovalReason.CHANGED_DIMENSION/*?}*/);
         return 1;
     }
@@ -139,19 +140,15 @@ public final class ResourceWorldCommand {
         CommandSourceStack source = ctx.getSource();
         ServerPlayer player = source.getPlayerOrException();
         ResourceKey<Level> key = getKeyChecked(ctx);
-        if (ResourceWorldHelper.RESETTING.contains(key))
-            throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(source, "message.resource_world.resetting")).create();
+        if (ResourceWorldHelper.RESETTING.contains(key)) throw createException(source, "resetting");
         ResourceWorldData data = getDataChecked(ctx);
-        if (!data.isEnabled())
-            throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(source, "message.resource_world.disabled")).create();
+        if (!data.isEnabled()) throw createException(source, "disabled");
         ServerLevel world = getLevelChecked(ctx);
         long delta = COOLDOWNS.getOrDefault(player, 0) + data.getSettings().getCooldown() * 1000L - System.currentTimeMillis();
-        if (delta > 0)
-            throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(source, "message.resource_world.teleport_cooldown", String.valueOf(delta / 1000))).create();
-        source.sendSystemMessage(ServerI18n.translateToLiteral(source, "message.resource_world.finding_position"));
+        if (delta > 0) throw createException(source, "teleport_cooldown", String.valueOf(delta / 1000));
+        source.sendSystemMessage(createMessage(source, "finding_position"));
         BlockPos pos = PositionLocator.locate(world, data);
-        if (pos == null)
-            throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(source, "message.resource_world.cannot_find_position")).create();
+        if (pos == null) throw createException(source, "cannot_find_position");
         player.teleportTo(world, pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, player.getYRot(), player.getXRot());
         COOLDOWNS.put(player, System.currentTimeMillis());
         return 1;
@@ -160,14 +157,14 @@ public final class ResourceWorldCommand {
     private static int createMirrorWorld(CommandContext<CommandSourceStack> ctx, long seed) throws CommandSyntaxException {
         CommandSourceStack source = ctx.getSource();
         if (ResourceWorldHelper.createWorld(source.getServer(), createKey(ctx), new MirrorGenerateOption(ResourceKey.create(Registries.LEVEL_STEM, ResourceLocationArgument.getId(ctx, "target"))), seed))
-            source.sendSystemMessage(ServerI18n.translateToLiteral(source, "message.resource_world.success"));
+            source.sendSystemMessage(createMessage(source, "success"));
         return 1;
     }
 
     private static int createFlatWorld(CommandContext<CommandSourceStack> ctx, long seed) throws CommandSyntaxException {
         CommandSourceStack source = ctx.getSource();
         if (ResourceWorldHelper.createWorld(source.getServer(), createKey(ctx), new FlatGenerateOption(StringArgumentType.getString(ctx, "preset")), seed))
-            source.sendSystemMessage(ServerI18n.translateToLiteral(source, "message.resource_world.success"));
+            source.sendSystemMessage(createMessage(source, "success"));
         return 1;
     }
 
@@ -178,16 +175,15 @@ public final class ResourceWorldCommand {
 
     private static int deleteWorld(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         CommandSourceStack source = ctx.getSource();
-        MinecraftServer server = source.getServer();
         ServerLevel world = getLevelChecked(ctx);
         String id = ResourceWorldHelper.resolveId(world.dimension());
         if (DELETE_CONFIRM.containsKey(id) && DELETE_CONFIRM.getLong(id) + 60 * 1000 >= System.currentTimeMillis()) {
-            ResourceWorldHelper.deleteWorld(server, world);
-            source.sendSystemMessage(ServerI18n.translateToLiteral(source, "message.resource_world.success"));
+            ResourceWorldHelper.deleteWorld(source.getServer(), world);
+            source.sendSystemMessage(createMessage(source, "success"));
             DELETE_CONFIRM.removeLong(id);
         } else {
             DELETE_CONFIRM.put(id, System.currentTimeMillis());
-            source.sendSystemMessage(ServerI18n.translateToLiteral(source, "message.resource_world.confirm_in_60s"));
+            source.sendSystemMessage(createMessage(source, "confirm_in_60s"));
         }
         return 1;
     }
@@ -196,7 +192,7 @@ public final class ResourceWorldCommand {
         CommandSourceStack source = ctx.getSource();
         ResourceWorldData data = getDataChecked(ctx);
         data.setEnabled(enable);
-        source.sendSystemMessage(ServerI18n.translateToLiteral(source, "message.resource_world.success"));
+        source.sendSystemMessage(createMessage(source, "success"));
         return 1;
     }
 
@@ -205,23 +201,21 @@ public final class ResourceWorldCommand {
         String id = StringArgumentType.getString(ctx, "world");
         CommandSourceStack source = ctx.getSource();
         if (WorldConfig.get(ResourceWorldHelper.toRegistryKey(id)) != null)
-            throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(source, "message.resource_world.duplicate_id")).create();
+            throw createException(source, "duplicate_id");
         return ResourceWorldHelper.toRegistryKey(id);
     }
 
     @NotNull
     private static ResourceKey<Level> getKeyChecked(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         ResourceKey<Level> key = ResourceWorldHelper.toRegistryKey(StringArgumentType.getString(ctx, "world"));
-        if (ResourceWorldHelper.isNotResourceWorld(key))
-            throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(ctx.getSource(), "message.resource_world.not_a_resource_world")).create();
+        if (ResourceWorldHelper.isNotResourceWorld(key)) throw createException(ctx.getSource(), "not_a_resource_world");
         return key;
     }
 
     @NotNull
     private static ResourceWorldData getDataChecked(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         ResourceWorldData data = WorldConfig.get(getKeyChecked(ctx));
-        if (data == null)
-            throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(ctx.getSource(), "message.resource_world.unknown_resource_world")).create();
+        if (data == null) throw createException(ctx.getSource(), "unknown_resource_world");
         return data;
     }
 
@@ -229,8 +223,15 @@ public final class ResourceWorldCommand {
     private static ServerLevel getLevelChecked(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         CommandSourceStack source = ctx.getSource();
         ServerLevel world = source.getServer().getLevel(getKeyChecked(ctx));
-        if (world == null)
-            throw new SimpleCommandExceptionType(ServerI18n.translateToLiteral(source, "message.resource_world.unknown_resource_world")).create();
+        if (world == null) throw createException(source, "unknown_resource_world");
         return world;
+    }
+
+    public static Component createMessage(CommandSourceStack source, String key, String... format) throws CommandSyntaxException {
+        return ServerI18n.translateToLiteral(source, String.format(Locale.ROOT, "message.resource_world.%s", key), format);
+    }
+
+    public static CommandSyntaxException createException(CommandSourceStack source, String key, String... format) throws CommandSyntaxException {
+        return new SimpleCommandExceptionType(createMessage(source, key, format)).create();
     }
 }

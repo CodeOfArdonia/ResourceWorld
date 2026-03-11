@@ -24,17 +24,14 @@ public class DifficultyCommandMixin {
 
     @Inject(method = "setDifficulty", at = @At("HEAD"), cancellable = true)
     private static void handleResourceWorldDifficulty(CommandSourceStack source, Difficulty difficulty, CallbackInfoReturnable<Integer> cir) throws CommandSyntaxException {
-        if (source.isPlayer()) {
-            ServerLevel world = source.getPlayerOrException().serverLevel();
-            ResourceWorldData config = WorldConfig.get(world.dimension());
-            if (config == null) return;
-            if (config.getDifficulty() == difficulty) throw ERROR_ALREADY_DIFFICULT.create(difficulty.getKey());
-            else {
-                config.setDifficulty(difficulty);
-                source.sendSuccess(() -> Component.translatable("commands.difficulty.success", difficulty.getDisplayName()), true);
-                cir.setReturnValue(0);
-                WorldConfig.saveConfig();
-            }
+        ResourceWorldData data = WorldConfig.get(source.getLevel().dimension());
+        if (data == null) return;
+        if (data.getDifficulty() == difficulty) throw ERROR_ALREADY_DIFFICULT.create(difficulty.getKey());
+        else {
+            data.setDifficulty(difficulty);
+            source.sendSuccess(() -> Component.translatable("commands.difficulty.success", difficulty.getDisplayName()), true);
+            cir.setReturnValue(0);
+            WorldConfig.saveConfig();
         }
     }
 }

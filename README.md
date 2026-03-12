@@ -21,13 +21,13 @@ Root command: `/resourceworld`
 
 ### Admin Commands
 
-- `/resourceworld create <world id> <mirror/flat> ...`: Create a resource world with specific dimension
+- `/resourceworld create <world id> <mirror/flat> ... [<seed>]`: Create a resource world with specific dimension
   options. Seed is optional, leave blank for random seed.
 - `/resourceworld delete <world id>`: Permanently delete a resource world.
 - `/resourceworld reset <world id>`: Reset specific resource world. (Delete previous one and create new with different
   seed.)
 - `/resourceworld enable/disable <world id>`: Enable/Disable specific resource world.
-- `/resourceworld settings <world id> <option> get/set`: Configure resource world settings.
+- `/resourceworld settings <world id> <option> [<new value>]`: Configure resource world settings.
 
 #### All available settings
 

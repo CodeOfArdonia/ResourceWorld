@@ -20,6 +20,7 @@
     "resource_world.mixins.json"
   ],
   "depends": {
-    "minecraft": [${supported_minecraft_versions}]
+    "minecraft": [${supported_minecraft_versions}],
+    "server_i18n_api": ">=1.5"
   }
 }

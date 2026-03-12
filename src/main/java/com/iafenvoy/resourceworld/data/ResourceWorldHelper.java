@@ -27,8 +27,8 @@ import java.util.Set;
 public class ResourceWorldHelper {
     public static final Set<ResourceKey<Level>> RESETTING = new HashSet<>();
 
-    public static boolean isNotResourceWorld(ResourceKey<Level> key) {
-        return !key.location().getNamespace().equals(ResourceWorld.MOD_ID);
+    public static boolean isResourceWorld(ResourceKey<Level> key) {
+        return key.location().getNamespace().equals(ResourceWorld.MOD_ID);
     }
 
     public static String resolveId(ResourceKey<Level> key) {
@@ -125,7 +125,7 @@ public class ResourceWorldHelper {
     }
 
     private static void printInfo(MinecraftServer server, String key, ResourceKey<Level> world) {
-        ResourceWorld.LOGGER.info(ServerI18n.translate(ServerI18n.DEFAULT_LANGUAGE, "message.resource_world.base", world.location().getPath(), ServerI18n.translate(ServerI18n.DEFAULT_LANGUAGE, key)));
+        ResourceWorld.LOGGER.info(ServerI18n.translateDefault("message.resource_world.base", world.location().getPath(), ServerI18n.translateDefault(key)));
         for (ServerPlayer player : server.getPlayerList().getPlayers())
             player.sendSystemMessage(ServerI18n.translateToLiteral(player, "message.resource_world.base", world.location().getPath(), ServerI18n.translate(player, key)));
     }

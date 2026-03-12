@@ -18,7 +18,6 @@
   "message.resource_world.success": "Success!",
   "message.resource_world.success_remove_world_data": "Successfully remove world data.",
   "message.resource_world.teleport_cooldown": "Teleport cooldown, remaining time: %s seconds.",
-  "message.resource_world.unknown_resource_world": "Unknown resource world key",
   "message.resource_world.unknown_stem": "Unknown world %s",
   "message.resource_world.unload_world": "Unloading world..."
 }

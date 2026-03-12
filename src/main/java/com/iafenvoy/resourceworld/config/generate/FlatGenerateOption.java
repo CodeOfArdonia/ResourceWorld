@@ -8,9 +8,9 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.client.gui.screens.PresetFlatWorldScreen;
 import net.minecraft.core.HolderGetter;
-import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
@@ -21,7 +21,7 @@ import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.minecraft.world.level.levelgen.structure.StructureSet;
 
 public record FlatGenerateOption(String preset) implements GenerateOption {
-    public static final /*? >=1.20.5 {*/MapCodec/*?} else {*//*Codec*//*?}*/<FlatGenerateOption> CODEC = RecordCodecBuilder./*? >=1.20.5 {*/mapCodec/*?} else {*//*create*//*?}*/(i -> i.group(
+    public static final /*? >=1.20.5 {*/ MapCodec/*?} else {*//*Codec*//*?}*/<FlatGenerateOption> CODEC = RecordCodecBuilder./*? >=1.20.5 {*/mapCodec/*?} else {*//*create*//*?}*/(i -> i.group(
             Codec.STRING.fieldOf("preset").forGetter(FlatGenerateOption::preset)
     ).apply(i, FlatGenerateOption::new));
 
@@ -43,7 +43,8 @@ public record FlatGenerateOption(String preset) implements GenerateOption {
         return PresetFlatWorldScreen.fromString(blockGetter, biomeGetter, structureGetter, featureGetter, preset, FlatLevelGeneratorSettings.getDefault(biomeGetter, structureGetter, featureGetter));
     }
 
-    static {
-        Registry.register(REGISTRY, RLUtil.id("flat"), CODEC);
+    @Override
+    public ResourceLocation getDimensionTypeId() {
+        return RLUtil.id(this.preset);
     }
 }

@@ -1,6 +1,6 @@
 package com.iafenvoy.resourceworld.mixin;
 
-import com.iafenvoy.resourceworld.ResourceWorldCommand;
+import com.iafenvoy.resourceworld.command.ResourceWorldCommand;
 import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;

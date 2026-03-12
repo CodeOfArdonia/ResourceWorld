@@ -15,7 +15,6 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.storage.LevelResource;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.ApiStatus;
@@ -74,12 +73,11 @@ public class WorldConfig {
 
     @Nullable
     public static ResourceWorldData get(ResourceKey<Level> key) {
-        if (ResourceWorldHelper.isNotResourceWorld(key)) return null;
-        return DATA.get(ResourceWorldHelper.resolveId(key));
+        return ResourceWorldHelper.isResourceWorld(key) ? DATA.get(ResourceWorldHelper.resolveId(key)) : null;
     }
 
     public static void remove(ResourceKey<Level> key) {
-        if (ResourceWorldHelper.isNotResourceWorld(key)) return;
+        if (!ResourceWorldHelper.isResourceWorld(key)) return;
         DATA.remove(ResourceWorldHelper.resolveId(key));
         saveConfig();
     }

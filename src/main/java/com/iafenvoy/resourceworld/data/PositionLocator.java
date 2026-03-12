@@ -20,7 +20,7 @@ public class PositionLocator {
 
     @Nullable
     public static BlockPos locate(Level world, ResourceWorldData data) {
-        return LOCATOR.getOrDefault(data.getGenerateOption(), (w, d) -> toValidPos(randomPos(w, d, w.getMaxBuildHeight()), w)).apply(world, data);
+        return LOCATOR.getOrDefault(data.getGenerateOption().getDimensionTypeId(), (w, d) -> toValidPos(randomPos(w, d, w.getMaxBuildHeight()), w)).apply(world, data);
     }
 
     @Nullable

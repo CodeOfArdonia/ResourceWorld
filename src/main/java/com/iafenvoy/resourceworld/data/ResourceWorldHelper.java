@@ -59,7 +59,33 @@ public class ResourceWorldHelper {
         PlayerList playerList = server.getPlayerList();
         for (ServerPlayer player : playerList.getPlayers())
             if (Objects.equals(player.level().dimension(), world.dimension()))
-                playerList.respawn(player, true/*? >=1.21 {*/, Entity.RemovalReason.CHANGED_DIMENSION/*?}*/);
+                teleportToSpawn(player);
+    }
+
+    public static void teleportToSpawn(ServerPlayer player) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+
+        ServerLevel respawnLevel = server.getLevel(player.getRespawnDimension());
+        if (respawnLevel == null) {
+            respawnLevel = server.getLevel(Level.OVERWORLD);
+        }
+
+        net.minecraft.core.BlockPos respawnPos = player.getRespawnPosition();
+        float respawnAngle = player.getRespawnAngle();
+        boolean forced = player.isRespawnForced();
+
+        if (respawnPos != null) {
+            java.util.Optional<net.minecraft.world.phys.Vec3> optional = net.minecraft.world.entity.player.Player.findRespawnPositionAndUseSpawnBlock(respawnLevel, respawnPos, respawnAngle, forced, true);
+            if (optional.isPresent()) {
+                net.minecraft.world.phys.Vec3 vec3 = optional.get();
+                player.teleportTo(respawnLevel, vec3.x, vec3.y, vec3.z, respawnAngle, 0.0F);
+                return;
+            }
+        }
+
+        net.minecraft.core.BlockPos sharedSpawnPos = respawnLevel.getSharedSpawnPos();
+        player.teleportTo(respawnLevel, sharedSpawnPos.getX() + 0.5, sharedSpawnPos.getY(), sharedSpawnPos.getZ() + 0.5, respawnLevel.getSharedSpawnAngle(), 0.0F);
     }
 
     public static void deleteWorld(MinecraftServer server, ServerLevel world) {

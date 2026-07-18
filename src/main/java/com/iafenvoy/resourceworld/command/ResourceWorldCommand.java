@@ -25,7 +25,6 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.Entity;
 
 import static net.minecraft.commands.Commands.argument;
 import static net.minecraft.commands.Commands.literal;
@@ -101,7 +100,7 @@ public final class ResourceWorldCommand {
     private static int home(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         CommandSourceStack source = ctx.getSource();
         ObjectUtil.assertOrThrow(ObjectUtil.nonNullOrThrow(WorldConfig.get(source.getPlayerOrException().level().dimension()), () -> ExceptionTypes.NOT_A_RESOURCE_WORLD.create(source)).getSettings().isAllowHomeCommand(), () -> ExceptionTypes.HOME_COMMAND_BANNED.create(source));
-        source.getServer().getPlayerList().respawn(source.getPlayerOrException(), true/*? >=1.21 {*/, Entity.RemovalReason.CHANGED_DIMENSION/*?}*/);
+        ResourceWorldHelper.teleportToSpawn(source.getPlayerOrException());
         return 1;
     }
 

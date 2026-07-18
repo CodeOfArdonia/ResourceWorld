@@ -8,13 +8,21 @@ import com.iafenvoy.resourceworld.config.generate.GenerateOption;
 import com.iafenvoy.resourceworld.mixin.LevelResourceAccessor;
 import com.iafenvoy.resourceworld.util.RLUtil;
 import com.iafenvoy.server.i18n.ServerI18n;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerList;
-import net.minecraft.world.entity.Entity;
+//? >=1.20.5 {
+import net.minecraft.world.level.portal.DimensionTransition;
+//?} else {
+/*import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
+
+import java.util.Optional;
+*///?}
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.LevelResource;
 import org.apache.commons.io.FileUtils;
@@ -59,7 +67,37 @@ public class ResourceWorldHelper {
         PlayerList playerList = server.getPlayerList();
         for (ServerPlayer player : playerList.getPlayers())
             if (Objects.equals(player.level().dimension(), world.dimension()))
-                playerList.respawn(player, true/*? >=1.21 {*/, Entity.RemovalReason.CHANGED_DIMENSION/*?}*/);
+                teleportToSpawn(player);
+    }
+
+    public static void teleportToSpawn(ServerPlayer player) {
+        MinecraftServer server = player.getServer();
+        if (server == null) return;
+
+        ServerLevel respawnLevel = server.getLevel(player.getRespawnDimension());
+        if (respawnLevel != null && !isResourceWorld(respawnLevel.dimension()) && player.getRespawnPosition() != null) {
+            //? >=1.20.5 {
+            DimensionTransition transition = player.findRespawnPositionAndUseSpawnBlock(true, DimensionTransition.DO_NOTHING);
+            if (!transition.missingRespawnBlock() && transition.newLevel() == respawnLevel) {
+                player.teleportTo(respawnLevel, transition.pos().x, transition.pos().y, transition.pos().z, transition.yRot(), transition.xRot());
+                return;
+            }
+            //?} else {
+            /*Optional<Vec3> position = Player.findRespawnPositionAndUseSpawnBlock(respawnLevel, player.getRespawnPosition(), player.getRespawnAngle(), player.isRespawnForced(), true);
+            if (position.isPresent()) {
+                Vec3 vec3 = position.get();
+                player.teleportTo(respawnLevel, vec3.x, vec3.y, vec3.z, player.getRespawnAngle(), 0.0F);
+                return;
+            }
+            *///?}
+        }
+
+        if (isResourceWorld(player.getRespawnDimension()))
+            player.setRespawnPosition(Level.OVERWORLD, null, 0, false, false);
+
+        ServerLevel overworld = server.overworld();
+        BlockPos spawn = overworld.getSharedSpawnPos();
+        player.teleportTo(overworld, spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5, overworld.getSharedSpawnAngle(), 0.0F);
     }
 
     public static void deleteWorld(MinecraftServer server, ServerLevel world) {

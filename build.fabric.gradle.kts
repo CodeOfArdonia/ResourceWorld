@@ -123,5 +123,6 @@ publishMods {
         accessToken = env.CURSEFORGE_API_KEY.orNull()
         minecraftVersions.addAll(supportedMinecraftVersions)
         requires("server-i18n-api")
+        serverRequired = true
     }
 }

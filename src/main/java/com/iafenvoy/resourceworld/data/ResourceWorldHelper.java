@@ -24,7 +24,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerList;
 //? >=1.20.5 {
-import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.portal.DimensionTransition;
 //?} else {
 /*import net.minecraft.world.entity.player.Player;
@@ -160,22 +159,23 @@ public class ResourceWorldHelper {
         printInfo(server, "message.resource_world.success_remove_world_data", key);
     }
 
+    @SuppressWarnings("DeconstructionCanBeUsed")
     private static boolean copyWorldData(MinecraftServer server, ResourceKey<Level> target, GenerateOption option) {
         Path source;
-        if (option instanceof MirrorGenerateOption(ResourceKey<LevelStem> dimension)) {
-            ResourceKey<Level> sourceKey = ResourceKey.create(Registries.DIMENSION, dimension.location());
+        if (option instanceof MirrorGenerateOption copy) {
+            ResourceKey<Level> sourceKey = ResourceKey.create(Registries.DIMENSION, copy.dimension().location());
             if (sourceKey.equals(target) || server.getLevel(sourceKey) == null) {
                 ResourceWorld.LOGGER.error("Invalid copy-world source {}", sourceKey.location());
                 return false;
             }
             server.saveAllChunks(true, true, true);
             source = getDimensionDataFolder(server.getWorldPath(LevelResource.ROOT), sourceKey.location());
-        } else if (option instanceof TemplateGenerateOption(String template, ResourceKey<LevelStem> dimension)) {
-            if (!template.matches("[A-Za-z0-9_-]+")) {
-                ResourceWorld.LOGGER.error("Invalid resource world template name {}", template);
+        } else if (option instanceof TemplateGenerateOption copy) {
+            if (!copy.template().matches("[A-Za-z0-9_-]+")) {
+                ResourceWorld.LOGGER.error("Invalid resource world template name {}", copy.template());
                 return false;
             }
-            source = getDimensionDataFolder(getTemplateRoot(server).resolve(template), dimension.location());
+            source = getDimensionDataFolder(getTemplateRoot(server).resolve(copy.template()), copy.dimension().location());
         } else return true;
 
         if (!Files.isDirectory(source)) {
@@ -190,8 +190,7 @@ public class ResourceWorldHelper {
             clearDataDirectory(destination.resolve("poi"), target, "poi");
             for (String directory : new String[]{"region", "entities", "poi"}) {
                 Path sourceDirectory = source.resolve(directory);
-                if (Files.isDirectory(sourceDirectory))
-                    FileUtils.copyDirectory(sourceDirectory.toFile(), destination.resolve(directory).toFile());
+                if (Files.isDirectory(sourceDirectory)) FileUtils.copyDirectory(sourceDirectory.toFile(), destination.resolve(directory).toFile());
             }
             return true;
         } catch (Exception e) {
@@ -200,9 +199,10 @@ public class ResourceWorldHelper {
         }
     }
 
+    @SuppressWarnings("DeconstructionCanBeUsed")
     private static Long getCopySeed(MinecraftServer server, GenerateOption option) {
-        if (option instanceof MirrorGenerateOption(ResourceKey<LevelStem> dimension)) {
-            ServerLevel source = server.getLevel(ResourceKey.create(Registries.DIMENSION, dimension.location()));
+        if (option instanceof MirrorGenerateOption copy) {
+            ServerLevel source = server.getLevel(ResourceKey.create(Registries.DIMENSION, copy.dimension().location()));
             return source == null ? null : source.getSeed();
         }
         if (option instanceof TemplateGenerateOption copy) {
@@ -213,7 +213,7 @@ public class ResourceWorldHelper {
                 CompoundTag data = NbtIo.readCompressed(levelData, NbtAccounter.unlimitedHeap()).getCompound("Data");
                 //?} else {
                 /*CompoundTag data = NbtIo.readCompressed(levelData.toFile()).getCompound("Data");
-                 *///?}
+                *///?}
                 CompoundTag worldGenSettings = data.getCompound("WorldGenSettings");
                 return worldGenSettings.contains("seed") ? worldGenSettings.getLong("seed") : null;
             } catch (Exception e) {
@@ -232,7 +232,7 @@ public class ResourceWorldHelper {
         return server.getServerDirectory().resolve("resourceworld");
         //?} else {
         /*return server.getServerDirectory().toPath().resolve("resourceworld");
-         *///?}
+        *///?}
     }
 
     private static Path getDimensionDataFolder(Path root, ResourceLocation dimension) {

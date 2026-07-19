@@ -5,17 +5,26 @@ import com.iafenvoy.resourceworld.accessor.MinecraftServerAccessor;
 import com.iafenvoy.resourceworld.config.ResourceWorldData;
 import com.iafenvoy.resourceworld.config.WorldConfig;
 import com.iafenvoy.resourceworld.config.generate.GenerateOption;
+import com.iafenvoy.resourceworld.config.generate.MirrorGenerateOption;
+import com.iafenvoy.resourceworld.config.generate.TemplateGenerateOption;
 import com.iafenvoy.resourceworld.mixin.LevelResourceAccessor;
 import com.iafenvoy.resourceworld.util.RLUtil;
 import com.iafenvoy.server.i18n.ServerI18n;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtIo;
+//? >=1.20.5 {
+import net.minecraft.nbt.NbtAccounter;
+//?}
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerList;
 //? >=1.20.5 {
+import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.portal.DimensionTransition;
 //?} else {
 /*import net.minecraft.world.entity.player.Player;
@@ -28,6 +37,7 @@ import net.minecraft.world.level.storage.LevelResource;
 import org.apache.commons.io.FileUtils;
 
 import java.nio.file.Path;
+import java.nio.file.Files;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -52,9 +62,23 @@ public class ResourceWorldHelper {
     }
 
     public static boolean createWorld(MinecraftServer server, ResourceKey<Level> key, GenerateOption stem, long seed) {
+        try {
+            stem.createStem(server.registryAccess());
+        } catch (Exception e) {
+            ResourceWorld.LOGGER.error("Invalid resource world generation option", e);
+            return false;
+        }
+        Long sourceSeed = getCopySeed(server, stem);
+        if (isCopyOption(stem) && sourceSeed == null) return false;
+
         ResourceWorldData data = WorldConfig.create(resolveId(key), stem);
-        if (seed != 0) data.setSeed(seed);
+        if (sourceSeed != null) data.setSeed(sourceSeed);
+        else if (seed != 0) data.setSeed(seed);
         else WorldConfig.newSeed(key);
+        if (!copyWorldData(server, key, stem)) {
+            WorldConfig.remove(key);
+            return false;
+        }
         return recreateWorld(server, key, stem);
     }
 
@@ -113,8 +137,14 @@ public class ResourceWorldHelper {
         if (RESETTING.contains(key)) return;
         RESETTING.add(key);
         MinecraftServer server = world.getServer();
-        WorldConfig.newSeed(key);
+        if (!isCopyOption(data.getGenerateOption())) WorldConfig.newSeed(key);
         unloadAndDelete(world);
+        if (!copyWorldData(server, key, data.getGenerateOption())) {
+            ResourceWorld.LOGGER.error("Failed to copy data while resetting resource world {}", key.location());
+            world.noSave = false;
+            RESETTING.remove(key);
+            return;
+        }
         printInfo(server, "message.resource_world.creating", key);
         recreateWorld(server, key, data.getGenerateOption());
         printInfo(server, "message.resource_world.reset", key);
@@ -124,22 +154,101 @@ public class ResourceWorldHelper {
 
     private static void deleteWorldData(MinecraftServer server, ResourceKey<Level> key) {
         Path path = server.getWorldPath(getDimensionFolder(key));
-        try {
-            FileUtils.cleanDirectory(path.resolve("region").toFile());
-        } catch (Exception e) {
-            printError("Failed to remove region data.", key, e);
-        }
-        try {
-            FileUtils.cleanDirectory(path.resolve("entities").toFile());
-        } catch (Exception e) {
-            printError("Failed to remove entities data.", key, e);
-        }
-        try {
-            FileUtils.cleanDirectory(path.resolve("poi").toFile());
-        } catch (Exception e) {
-            printError("Failed to remove poi data.", key, e);
-        }
+        clearDataDirectory(path.resolve("region"), key, "region");
+        clearDataDirectory(path.resolve("entities"), key, "entities");
+        clearDataDirectory(path.resolve("poi"), key, "poi");
         printInfo(server, "message.resource_world.success_remove_world_data", key);
+    }
+
+    private static boolean copyWorldData(MinecraftServer server, ResourceKey<Level> target, GenerateOption option) {
+        Path source;
+        if (option instanceof MirrorGenerateOption(ResourceKey<LevelStem> dimension)) {
+            ResourceKey<Level> sourceKey = ResourceKey.create(Registries.DIMENSION, dimension.location());
+            if (sourceKey.equals(target) || server.getLevel(sourceKey) == null) {
+                ResourceWorld.LOGGER.error("Invalid copy-world source {}", sourceKey.location());
+                return false;
+            }
+            server.saveAllChunks(true, true, true);
+            source = getDimensionDataFolder(server.getWorldPath(LevelResource.ROOT), sourceKey.location());
+        } else if (option instanceof TemplateGenerateOption(String template, ResourceKey<LevelStem> dimension)) {
+            if (!template.matches("[A-Za-z0-9_-]+")) {
+                ResourceWorld.LOGGER.error("Invalid resource world template name {}", template);
+                return false;
+            }
+            source = getDimensionDataFolder(getTemplateRoot(server).resolve(template), dimension.location());
+        } else return true;
+
+        if (!Files.isDirectory(source)) {
+            ResourceWorld.LOGGER.error("Resource world copy source does not exist: {}", source);
+            return false;
+        }
+
+        Path destination = server.getWorldPath(getDimensionFolder(target));
+        try {
+            clearDataDirectory(destination.resolve("region"), target, "region");
+            clearDataDirectory(destination.resolve("entities"), target, "entities");
+            clearDataDirectory(destination.resolve("poi"), target, "poi");
+            for (String directory : new String[]{"region", "entities", "poi"}) {
+                Path sourceDirectory = source.resolve(directory);
+                if (Files.isDirectory(sourceDirectory))
+                    FileUtils.copyDirectory(sourceDirectory.toFile(), destination.resolve(directory).toFile());
+            }
+            return true;
+        } catch (Exception e) {
+            ResourceWorld.LOGGER.error("Failed to copy resource world data from {}", source, e);
+            return false;
+        }
+    }
+
+    private static Long getCopySeed(MinecraftServer server, GenerateOption option) {
+        if (option instanceof MirrorGenerateOption(ResourceKey<LevelStem> dimension)) {
+            ServerLevel source = server.getLevel(ResourceKey.create(Registries.DIMENSION, dimension.location()));
+            return source == null ? null : source.getSeed();
+        }
+        if (option instanceof TemplateGenerateOption copy) {
+            if (!copy.template().matches("[A-Za-z0-9_-]+")) return null;
+            try {
+                Path levelData = getTemplateRoot(server).resolve(copy.template()).resolve("level.dat");
+                //? >=1.20.5 {
+                CompoundTag data = NbtIo.readCompressed(levelData, NbtAccounter.unlimitedHeap()).getCompound("Data");
+                //?} else {
+                /*CompoundTag data = NbtIo.readCompressed(levelData.toFile()).getCompound("Data");
+                 *///?}
+                CompoundTag worldGenSettings = data.getCompound("WorldGenSettings");
+                return worldGenSettings.contains("seed") ? worldGenSettings.getLong("seed") : null;
+            } catch (Exception e) {
+                ResourceWorld.LOGGER.error("Failed to read resource world template seed", e);
+            }
+        }
+        return null;
+    }
+
+    private static boolean isCopyOption(GenerateOption option) {
+        return option instanceof MirrorGenerateOption || option instanceof TemplateGenerateOption;
+    }
+
+    private static Path getTemplateRoot(MinecraftServer server) {
+        //? >=1.21 {
+        return server.getServerDirectory().resolve("resourceworld");
+        //?} else {
+        /*return server.getServerDirectory().toPath().resolve("resourceworld");
+         *///?}
+    }
+
+    private static Path getDimensionDataFolder(Path root, ResourceLocation dimension) {
+        if (dimension.equals(Level.OVERWORLD.location())) return root;
+        if (dimension.equals(Level.NETHER.location())) return root.resolve("DIM-1");
+        if (dimension.equals(Level.END.location())) return root.resolve("DIM1");
+        return root.resolve("dimensions").resolve(dimension.getNamespace()).resolve(dimension.getPath());
+    }
+
+    private static void clearDataDirectory(Path directory, ResourceKey<Level> key, String name) {
+        if (!Files.isDirectory(directory)) return;
+        try {
+            FileUtils.cleanDirectory(directory.toFile());
+        } catch (Exception e) {
+            printError("Failed to remove %s data.".formatted(name), key, e);
+        }
     }
 
     private static void unloadAndDelete(ServerLevel world) {

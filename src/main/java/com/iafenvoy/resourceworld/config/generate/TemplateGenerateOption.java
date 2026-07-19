@@ -1,5 +1,6 @@
 package com.iafenvoy.resourceworld.config.generate;
 
+import com.mojang.serialization.Codec;
 //? >=1.20.5 {
 import com.mojang.serialization.MapCodec;
 //?} else {
@@ -12,13 +13,14 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.dimension.LevelStem;
 
-public record MirrorGenerateOption(ResourceKey<LevelStem> dimension) implements GenerateOption {
-    public static final /*? >=1.20.5 {*/MapCodec/*?} else {*//*Codec*//*?}*/<MirrorGenerateOption> CODEC = RecordCodecBuilder./*? >=1.20.5 {*/mapCodec/*?} else {*//*create*//*?}*/(i -> i.group(
-            ResourceKey.codec(Registries.LEVEL_STEM).fieldOf("dimension").forGetter(MirrorGenerateOption::dimension)
-    ).apply(i, MirrorGenerateOption::new));
+public record TemplateGenerateOption(String template, ResourceKey<LevelStem> dimension) implements GenerateOption {
+    public static final /*? >=1.20.5 {*/MapCodec/*?} else {*//*Codec*//*?}*/<TemplateGenerateOption> CODEC = RecordCodecBuilder./*? >=1.20.5 {*/mapCodec/*?} else {*//*create*//*?}*/(i -> i.group(
+            Codec.STRING.fieldOf("template").forGetter(TemplateGenerateOption::template),
+            ResourceKey.codec(Registries.LEVEL_STEM).fieldOf("dimension").forGetter(TemplateGenerateOption::dimension)
+    ).apply(i, TemplateGenerateOption::new));
 
     @Override
-    public /*? >=1.20.5 {*/MapCodec/*?} else {*//*Codec*//*?}*/<MirrorGenerateOption> codec() {
+    public /*? >=1.20.5 {*/MapCodec/*?} else {*//*Codec*//*?}*/<TemplateGenerateOption> codec() {
         return CODEC;
     }
 

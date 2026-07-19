@@ -21,8 +21,10 @@ Root command: `/resourceworld`
 
 ### Admin Commands
 
-- `/resourceworld create <world id> <mirror/flat> ... [<seed>]`: Create a resource world with specific dimension
-  options. Seed is optional, leave blank for random seed.
+- `/resourceworld create <world id> <type/flat> ... [<seed>]`: Create a resource world with specific dimension options.
+  Seed is optional, leave blank for random seed.
+- `/resourceworld create <world id> mirror <dimension>`: Create a snapshot of an existing dimension.
+- `/resourceworld create <world id> template <template> <dimension>`: Create a snapshot from a template.
 - `/resourceworld delete <world id>`: Permanently delete a resource world.
 - `/resourceworld reset <world id>`: Reset specific resource world. (Delete previous one and create new with different
   seed.)
@@ -40,7 +42,17 @@ Root command: `/resourceworld`
   cause wrong biome sounds and sky colors.
 - `allowHomeCommand`: Whether allow using `/resource home` command.
 
-### Developer Usage
+### Copy world sources
+
+- `mirror <dimension>` snapshots an existing loaded dimension in the current save. The server saves before copying.
+- `template <template> <dimension>` loads a snapshot from `<server directory>/resourceworld/<template>`.
+
+Both types copy only `region`, `entities`, and `poi`. Template folders use normal save layouts: the template root is the
+overworld, `DIM-1` is the Nether, `DIM1` is the End, and `dimensions/<namespace>/<path>` is any other dimension.
+Both types preserve their original source seed and never accept a seed argument. Resetting only refreshes the copied data.
+Templates must include their original `level.dat` so `template` can read the seed.
+
+## Developer Usage
 
 If you want to customize the dimension random teleport locator, create a class implement `RandomTeleportEntrypoint`,
 then annotate with `@EntryPointProvider(slug="random_teleport_locator")`(forge) or write into entrypoint

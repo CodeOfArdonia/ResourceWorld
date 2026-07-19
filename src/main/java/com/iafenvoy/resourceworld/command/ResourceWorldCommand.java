@@ -4,6 +4,8 @@ import com.iafenvoy.resourceworld.config.ResourceWorldData;
 import com.iafenvoy.resourceworld.config.WorldConfig;
 import com.iafenvoy.resourceworld.config.generate.FlatGenerateOption;
 import com.iafenvoy.resourceworld.config.generate.MirrorGenerateOption;
+import com.iafenvoy.resourceworld.config.generate.TemplateGenerateOption;
+import com.iafenvoy.resourceworld.config.generate.TypeGenerateOption;
 import com.iafenvoy.resourceworld.data.PositionLocator;
 import com.iafenvoy.resourceworld.data.ResourceWorldHelper;
 import com.iafenvoy.resourceworld.util.ObjectUtil;
@@ -25,6 +27,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.dimension.LevelStem;
 
 import static net.minecraft.commands.Commands.argument;
 import static net.minecraft.commands.Commands.literal;
@@ -34,7 +37,7 @@ public final class ResourceWorldCommand {
     private static final Object2LongMap<String> DELETE_CONFIRM = new Object2LongLinkedOpenHashMap<>();
 
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
-        RequiredArgumentBuilder<CommandSourceStack, String> settings = argument("world", StringArgumentType.word()).suggests(com.iafenvoy.resourceworld.command.SuggestionProviders.WORLD);
+        RequiredArgumentBuilder<CommandSourceStack, String> settings = argument("world", StringArgumentType.word()).suggests(SuggestionProviders.WORLD);
         SettingBuilder.appendSetting(settings, "centerX", IntegerArgumentType.integer(), IntegerArgumentType::getInteger, ResourceWorldData.Settings::getCenterX, ResourceWorldData.Settings::setCenterX);
         SettingBuilder.appendSetting(settings, "centerZ", IntegerArgumentType.integer(), IntegerArgumentType::getInteger, ResourceWorldData.Settings::getCenterZ, ResourceWorldData.Settings::setCenterZ);
         SettingBuilder.appendSetting(settings, "range", IntegerArgumentType.integer(0), IntegerArgumentType::getInteger, ResourceWorldData.Settings::getRange, ResourceWorldData.Settings::setRange);
@@ -50,15 +53,15 @@ public final class ResourceWorldCommand {
                 .then(literal("tp")
                         .requires(CommandSourceStack::isPlayer)
                         .then(argument("world", StringArgumentType.word())
-                                .suggests(com.iafenvoy.resourceworld.command.SuggestionProviders.WORLD)
+                                .suggests(SuggestionProviders.WORLD)
                                 .executes(ResourceWorldCommand::teleport)
                         ))
                 .then(literal("create")
                         .requires(ctx -> ctx.hasPermission(2))
                         .then(argument("world", StringArgumentType.word())
-                                .then(literal("mirror")
+                                .then(literal("type")
                                         .then(argument("target", ResourceLocationArgument.id())
-                                                .suggests(com.iafenvoy.resourceworld.command.SuggestionProviders.DIMENSIONS)
+                                                .suggests(SuggestionProviders.DIMENSIONS)
                                                 .then(argument("seed", LongArgumentType.longArg()).executes(ctx -> createMirrorWorld(ctx, LongArgumentType.getLong(ctx, "seed"))))
                                                 .executes(ctx -> createMirrorWorld(ctx, 0))
                                         ))
@@ -66,29 +69,41 @@ public final class ResourceWorldCommand {
                                         .then(argument("preset", StringArgumentType.string())
                                                 .then(argument("seed", LongArgumentType.longArg()).executes(ctx -> createFlatWorld(ctx, LongArgumentType.getLong(ctx, "seed"))))
                                                 .executes(ctx -> createFlatWorld(ctx, 0))
+                                        ))
+                                .then(literal("mirror")
+                                        .then(argument("dimension", ResourceLocationArgument.id())
+                                                .suggests(SuggestionProviders.DIMENSIONS)
+                                                .executes(ResourceWorldCommand::createCopyWorld)
+                                        ))
+                                .then(literal("template")
+                                        .then(argument("template", StringArgumentType.word())
+                                                .then(argument("dimension", ResourceLocationArgument.id())
+                                                        .suggests(SuggestionProviders.DIMENSIONS)
+                                                        .executes(ResourceWorldCommand::createCopyTemplate)
+                                                )
                                         ))))
                 .then(literal("reset")
                         .requires(ctx -> ctx.hasPermission(2))
                         .then(argument("world", StringArgumentType.word())
-                                .suggests(com.iafenvoy.resourceworld.command.SuggestionProviders.WORLD)
+                                .suggests(SuggestionProviders.WORLD)
                                 .executes(ResourceWorldCommand::resetWorld)
                         ))
                 .then(literal("delete")
                         .requires(ctx -> ctx.hasPermission(2))
                         .then(argument("world", StringArgumentType.word())
-                                .suggests(com.iafenvoy.resourceworld.command.SuggestionProviders.WORLD)
+                                .suggests(SuggestionProviders.WORLD)
                                 .executes(ResourceWorldCommand::deleteWorld)
                         ))
                 .then(literal("enable")
                         .requires(ctx -> ctx.hasPermission(2))
                         .then(argument("world", StringArgumentType.word())
-                                .suggests(com.iafenvoy.resourceworld.command.SuggestionProviders.WORLD)
+                                .suggests(SuggestionProviders.WORLD)
                                 .executes(ctx -> setEnable(ctx, true))
                         ))
                 .then(literal("disable")
                         .requires(ctx -> ctx.hasPermission(2))
                         .then(argument("world", StringArgumentType.word())
-                                .suggests(com.iafenvoy.resourceworld.command.SuggestionProviders.WORLD)
+                                .suggests(SuggestionProviders.WORLD)
                                 .executes(ctx -> setEnable(ctx, false))
                         ))
                 .then(literal("settings")
@@ -122,7 +137,7 @@ public final class ResourceWorldCommand {
 
     private static int createMirrorWorld(CommandContext<CommandSourceStack> ctx, long seed) throws CommandSyntaxException {
         CommandSourceStack source = ctx.getSource();
-        if (ResourceWorldHelper.createWorld(source.getServer(), CommandHelper.createKey(ctx), new MirrorGenerateOption(ResourceKey.create(Registries.LEVEL_STEM, ResourceLocationArgument.getId(ctx, "target"))), seed))
+        if (ResourceWorldHelper.createWorld(source.getServer(), CommandHelper.createKey(ctx), new TypeGenerateOption(ResourceKey.create(Registries.LEVEL_STEM, ResourceLocationArgument.getId(ctx, "target"))), seed))
             CommandHelper.sendMessage(source, "success");
         return 1;
     }
@@ -130,6 +145,22 @@ public final class ResourceWorldCommand {
     private static int createFlatWorld(CommandContext<CommandSourceStack> ctx, long seed) throws CommandSyntaxException {
         CommandSourceStack source = ctx.getSource();
         if (ResourceWorldHelper.createWorld(source.getServer(), CommandHelper.createKey(ctx), new FlatGenerateOption(StringArgumentType.getString(ctx, "preset")), seed))
+            CommandHelper.sendMessage(source, "success");
+        return 1;
+    }
+
+    private static int createCopyWorld(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        CommandSourceStack source = ctx.getSource();
+        ResourceKey<LevelStem> dimension = ResourceKey.create(Registries.LEVEL_STEM, ResourceLocationArgument.getId(ctx, "dimension"));
+        if (ResourceWorldHelper.createWorld(source.getServer(), CommandHelper.createKey(ctx), new MirrorGenerateOption(dimension), 0))
+            CommandHelper.sendMessage(source, "success");
+        return 1;
+    }
+
+    private static int createCopyTemplate(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
+        CommandSourceStack source = ctx.getSource();
+        ResourceKey<LevelStem> dimension = ResourceKey.create(Registries.LEVEL_STEM, ResourceLocationArgument.getId(ctx, "dimension"));
+        if (ResourceWorldHelper.createWorld(source.getServer(), CommandHelper.createKey(ctx), new TemplateGenerateOption(StringArgumentType.getString(ctx, "template"), dimension), 0))
             CommandHelper.sendMessage(source, "success");
         return 1;
     }

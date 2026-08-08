@@ -26,8 +26,8 @@ Root command: `/resourceworld`
 - `/resourceworld create <world id> mirror <dimension>`: Create a snapshot of an existing dimension.
 - `/resourceworld create <world id> template <template> <dimension>`: Create a snapshot from a template.
 - `/resourceworld delete <world id>`: Permanently delete a resource world.
-- `/resourceworld reset <world id>`: Reset specific resource world. (Delete previous one and create new with different
-  seed.)
+- `/resourceworld reset <world id>`: Reset specific resource world. Generated worlds receive a new seed; `mirror` and
+  `template` worlds keep their original source seed.
 - `/resourceworld enable/disable <world id>`: Enable/Disable specific resource world.
 - `/resourceworld settings <world id> <option> [<new value>]`: Configure resource world settings.
 
@@ -54,6 +54,5 @@ Templates must include their original `level.dat` so `template` can read the see
 
 ## Developer Usage
 
-If you want to customize the dimension random teleport locator, create a class implement `RandomTeleportEntrypoint`,
-then annotate with `@EntryPointProvider(slug="random_teleport_locator")`(forge) or write into entrypoint
-`random_teleport_locator`(fabric)
+If you want to customize the dimension random teleport locator, create a class implementing
+`RandomTeleportEntrypoint` and register it through the Integration API entrypoint `random_teleport_locator`.

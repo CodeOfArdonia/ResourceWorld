@@ -18,13 +18,14 @@ import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.NbtAccounter;
 //?}
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerList;
 //? >=1.20.5 {
-import net.minecraft.world.level.portal.DimensionTransition;
+import net.minecraft.world.level.portal.TeleportTransition;
+import net.minecraft.world.phys.Vec3;
 //?} else {
 /*import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
@@ -45,11 +46,11 @@ public class ResourceWorldHelper {
     public static final Set<ResourceKey<Level>> RESETTING = new HashSet<>();
 
     public static boolean isResourceWorld(ResourceKey<Level> key) {
-        return key.location().getNamespace().equals(ResourceWorld.MOD_ID);
+        return key.identifier().getNamespace().equals(ResourceWorld.MOD_ID);
     }
 
     public static String resolveId(ResourceKey<Level> key) {
-        return key.location().getPath();
+        return key.identifier().getPath();
     }
 
     public static ResourceKey<Level> toRegistryKey(String id) {
@@ -57,7 +58,7 @@ public class ResourceWorldHelper {
     }
 
     public static LevelResource getDimensionFolder(ResourceKey<Level> key) {
-        return LevelResourceAccessor.resourceWorld$newInstance("dimensions/%s/%s".formatted(key.location().getNamespace(), key.location().getPath()));
+        return LevelResourceAccessor.resourceWorld$newInstance("dimensions/%s/%s".formatted(key.identifier().getNamespace(), key.identifier().getPath()));
     }
 
     public static boolean createWorld(MinecraftServer server, ResourceKey<Level> key, GenerateOption stem, long seed) {
@@ -94,33 +95,24 @@ public class ResourceWorldHelper {
     }
 
     public static void teleportToSpawn(ServerPlayer player) {
-        MinecraftServer server = player.getServer();
-        if (server == null) return;
-
-        ServerLevel respawnLevel = server.getLevel(player.getRespawnDimension());
-        if (respawnLevel != null && !isResourceWorld(respawnLevel.dimension()) && player.getRespawnPosition() != null) {
-            //? >=1.20.5 {
-            DimensionTransition transition = player.findRespawnPositionAndUseSpawnBlock(true, DimensionTransition.DO_NOTHING);
+        MinecraftServer server = player.level().getServer();
+        ServerPlayer.RespawnConfig respawnConfig = player.getRespawnConfig();
+        if (respawnConfig != null) {
+            ServerLevel respawnLevel = server.getLevel(respawnConfig.respawnData().dimension());
+            if (respawnLevel != null && !isResourceWorld(respawnLevel.dimension())) {
+                TeleportTransition transition = player.findRespawnPositionAndUseSpawnBlock(true, TeleportTransition.DO_NOTHING);
             if (!transition.missingRespawnBlock() && transition.newLevel() == respawnLevel) {
-                player.teleportTo(respawnLevel, transition.pos().x, transition.pos().y, transition.pos().z, transition.yRot(), transition.xRot());
+                player.teleport(transition);
                 return;
             }
-            //?} else {
-            /*Optional<Vec3> position = Player.findRespawnPositionAndUseSpawnBlock(respawnLevel, player.getRespawnPosition(), player.getRespawnAngle(), player.isRespawnForced(), true);
-            if (position.isPresent()) {
-                Vec3 vec3 = position.get();
-                player.teleportTo(respawnLevel, vec3.x, vec3.y, vec3.z, player.getRespawnAngle(), 0.0F);
-                return;
             }
-            *///?}
         }
 
-        if (isResourceWorld(player.getRespawnDimension()))
-            player.setRespawnPosition(Level.OVERWORLD, null, 0, false, false);
+        if (respawnConfig != null && isResourceWorld(respawnConfig.respawnData().dimension()))
+            player.setRespawnPosition(null, false);
 
         ServerLevel overworld = server.overworld();
-        BlockPos spawn = overworld.getSharedSpawnPos();
-        player.teleportTo(overworld, spawn.getX() + 0.5, spawn.getY(), spawn.getZ() + 0.5, overworld.getSharedSpawnAngle(), 0.0F);
+        player.teleport(new TeleportTransition(overworld, Vec3.atCenterOf(server.getRespawnData().pos()), Vec3.ZERO, server.getRespawnData().yaw(), server.getRespawnData().pitch(), TeleportTransition.DO_NOTHING));
     }
 
     public static void deleteWorld(MinecraftServer server, ServerLevel world) {
@@ -139,7 +131,7 @@ public class ResourceWorldHelper {
         if (!isCopyOption(data.getGenerateOption())) WorldConfig.newSeed(key);
         unloadAndDelete(world);
         if (!copyWorldData(server, key, data.getGenerateOption())) {
-            ResourceWorld.LOGGER.error("Failed to copy data while resetting resource world {}", key.location());
+            ResourceWorld.LOGGER.error("Failed to copy data while resetting resource world {}", key.identifier());
             world.noSave = false;
             RESETTING.remove(key);
             return;
@@ -163,19 +155,19 @@ public class ResourceWorldHelper {
     private static boolean copyWorldData(MinecraftServer server, ResourceKey<Level> target, GenerateOption option) {
         Path source;
         if (option instanceof MirrorGenerateOption copy) {
-            ResourceKey<Level> sourceKey = ResourceKey.create(Registries.DIMENSION, copy.dimension().location());
+            ResourceKey<Level> sourceKey = ResourceKey.create(Registries.DIMENSION, copy.dimension().identifier());
             if (sourceKey.equals(target) || server.getLevel(sourceKey) == null) {
-                ResourceWorld.LOGGER.error("Invalid copy-world source {}", sourceKey.location());
+                ResourceWorld.LOGGER.error("Invalid copy-world source {}", sourceKey.identifier());
                 return false;
             }
             server.saveAllChunks(true, true, true);
-            source = getDimensionDataFolder(server.getWorldPath(LevelResource.ROOT), sourceKey.location());
+            source = getDimensionDataFolder(server.getWorldPath(LevelResource.ROOT), sourceKey.identifier());
         } else if (option instanceof TemplateGenerateOption copy) {
             if (!copy.template().matches("[A-Za-z0-9_-]+")) {
                 ResourceWorld.LOGGER.error("Invalid resource world template name {}", copy.template());
                 return false;
             }
-            source = getDimensionDataFolder(getTemplateRoot(server).resolve(copy.template()), copy.dimension().location());
+            source = getDimensionDataFolder(getTemplateRoot(server).resolve(copy.template()), copy.dimension().identifier());
         } else return true;
 
         if (!Files.isDirectory(source)) {
@@ -202,7 +194,7 @@ public class ResourceWorldHelper {
     @SuppressWarnings("DeconstructionCanBeUsed")
     private static Long getCopySeed(MinecraftServer server, GenerateOption option) {
         if (option instanceof MirrorGenerateOption copy) {
-            ServerLevel source = server.getLevel(ResourceKey.create(Registries.DIMENSION, copy.dimension().location()));
+            ServerLevel source = server.getLevel(ResourceKey.create(Registries.DIMENSION, copy.dimension().identifier()));
             return source == null ? null : source.getSeed();
         }
         if (option instanceof TemplateGenerateOption copy) {
@@ -210,12 +202,14 @@ public class ResourceWorldHelper {
             try {
                 Path levelData = getTemplateRoot(server).resolve(copy.template()).resolve("level.dat");
                 //? >=1.20.5 {
-                CompoundTag data = NbtIo.readCompressed(levelData, NbtAccounter.unlimitedHeap()).getCompound("Data");
+                CompoundTag data = NbtIo.readCompressed(levelData, NbtAccounter.unlimitedHeap()).getCompound("Data").orElse(null);
+                if (data == null) return null;
                 //?} else {
                 /*CompoundTag data = NbtIo.readCompressed(levelData.toFile()).getCompound("Data");
                 *///?}
-                CompoundTag worldGenSettings = data.getCompound("WorldGenSettings");
-                return worldGenSettings.contains("seed") ? worldGenSettings.getLong("seed") : null;
+                CompoundTag worldGenSettings = data.getCompound("WorldGenSettings").orElse(null);
+                if (worldGenSettings == null) return null;
+                return worldGenSettings.getLong("seed").orElse(null);
             } catch (Exception e) {
                 ResourceWorld.LOGGER.error("Failed to read resource world template seed", e);
             }
@@ -235,10 +229,10 @@ public class ResourceWorldHelper {
         *///?}
     }
 
-    private static Path getDimensionDataFolder(Path root, ResourceLocation dimension) {
-        if (dimension.equals(Level.OVERWORLD.location())) return root;
-        if (dimension.equals(Level.NETHER.location())) return root.resolve("DIM-1");
-        if (dimension.equals(Level.END.location())) return root.resolve("DIM1");
+    private static Path getDimensionDataFolder(Path root, Identifier dimension) {
+        if (dimension.equals(Level.OVERWORLD.identifier())) return root;
+        if (dimension.equals(Level.NETHER.identifier())) return root.resolve("DIM-1");
+        if (dimension.equals(Level.END.identifier())) return root.resolve("DIM1");
         return root.resolve("dimensions").resolve(dimension.getNamespace()).resolve(dimension.getPath());
     }
 
@@ -272,12 +266,12 @@ public class ResourceWorldHelper {
     }
 
     private static void printInfo(MinecraftServer server, String key, ResourceKey<Level> world) {
-        ResourceWorld.LOGGER.info(ServerI18n.translateDefault("message.resource_world.base", world.location().getPath(), ServerI18n.translateDefault(key)));
+        ResourceWorld.LOGGER.info(ServerI18n.translateDefault("message.resource_world.base", world.identifier().getPath(), ServerI18n.translateDefault(key)));
         for (ServerPlayer player : server.getPlayerList().getPlayers())
-            player.sendSystemMessage(ServerI18n.translateToLiteral(player, "message.resource_world.base", world.location().getPath(), ServerI18n.translate(player, key)));
+            player.sendSystemMessage(ServerI18n.translateToLiteral(player, "message.resource_world.base", world.identifier().getPath(), ServerI18n.translate(player, key)));
     }
 
     private static void printError(String s, ResourceKey<Level> world, Object... data) {
-        ResourceWorld.LOGGER.info("[Resource World] (World: %s) %s".formatted(world.location().getPath(), s), data);
+        ResourceWorld.LOGGER.info("[Resource World] (World: %s) %s".formatted(world.identifier().getPath(), s), data);
     }
 }

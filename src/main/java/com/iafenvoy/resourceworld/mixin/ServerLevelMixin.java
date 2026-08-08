@@ -5,29 +5,27 @@ import com.iafenvoy.resourceworld.ResourceWorld;
 import com.iafenvoy.resourceworld.config.WorldConfig;
 import com.iafenvoy.resourceworld.data.ResourceWorldHelper;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.Difficulty;
-import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.storage.WritableLevelData;
-import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.util.function.Supplier;
 
 @Mixin(ServerLevel.class)
 public abstract class ServerLevelMixin extends Level {
-    protected ServerLevelMixin(WritableLevelData properties, ResourceKey<Level> registryRef, RegistryAccess registryManager, Holder<DimensionType> dimensionEntry, Supplier<ProfilerFiller> profiler, boolean isClient, boolean debugWorld, long biomeAccess, int maxChainedNeighborUpdates) {
-        super(properties, registryRef, registryManager, dimensionEntry, profiler, isClient, debugWorld, biomeAccess, maxChainedNeighborUpdates);
+    protected ServerLevelMixin(WritableLevelData properties, ResourceKey<Level> registryRef, RegistryAccess registryManager, Holder<DimensionType> dimensionEntry, boolean isClient, boolean debugWorld, long biomeAccess, int maxChainedNeighborUpdates) {
+        super(properties, registryRef, registryManager, dimensionEntry, isClient, debugWorld, biomeAccess, maxChainedNeighborUpdates);
     }
 
     @ModifyExpressionValue(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/levelgen/WorldOptions;seed()J"))
@@ -51,9 +49,9 @@ public abstract class ServerLevelMixin extends Level {
     }
 
     @Inject(method = "tick", at = @At("HEAD"), cancellable = true)
-    private void beforeTick(CallbackInfo ci) {
+    private void beforeTick(java.util.function.BooleanSupplier hasTimeLeft, CallbackInfo ci) {
         if (ResourceWorldHelper.RESETTING.contains(this.dimension())) ci.cancel();
-        else if (!this.isClientSide) MixinCache.CURRENT_TICKING_WORLD = this.dimension();
+        else if (!this.isClientSide()) MixinCache.CURRENT_TICKING_WORLD = this.dimension();
     }
 
     @Inject(method = "tick", at = @At("TAIL"))
@@ -61,13 +59,9 @@ public abstract class ServerLevelMixin extends Level {
         MixinCache.CURRENT_TICKING_WORLD = null;
     }
 
-    @Override
-    public @NotNull GameRules getGameRules() {
-        return WorldConfig.getGameRules(this.dimension()).orElse(super.getGameRules());
+    @ModifyReturnValue(method = "getGameRules", at = @At("RETURN"))
+    private GameRules handleResourceWorldGameRules(GameRules original) {
+        return WorldConfig.getGameRules(this.dimension()).orElse(original);
     }
 
-    @Override
-    public @NotNull Difficulty getDifficulty() {
-        return WorldConfig.getDifficulty(this.dimension()).orElse(super.getDifficulty());
-    }
 }

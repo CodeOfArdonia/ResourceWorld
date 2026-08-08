@@ -10,7 +10,7 @@ import net.minecraft.client.gui.screens.PresetFlatWorldScreen;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
@@ -32,7 +32,7 @@ public record FlatGenerateOption(String preset) implements GenerateOption {
 
     @Override
     public LevelStem createStem(RegistryAccess registries) {
-        return new LevelStem(registries.registryOrThrow(Registries.DIMENSION_TYPE).getHolderOrThrow(BuiltinDimensionTypes.OVERWORLD), new FlatLevelSource(createFromString(registries, this.preset)));
+        return new LevelStem(registries.lookupOrThrow(Registries.DIMENSION_TYPE).getOrThrow(BuiltinDimensionTypes.OVERWORLD), new FlatLevelSource(createFromString(registries, this.preset)));
     }
 
     public static FlatLevelGeneratorSettings createFromString(RegistryAccess registries, String preset) {
@@ -44,7 +44,7 @@ public record FlatGenerateOption(String preset) implements GenerateOption {
     }
 
     @Override
-    public ResourceLocation getDimensionTypeId() {
+    public Identifier getDimensionTypeId() {
         return RLUtil.id(this.preset);
     }
 }

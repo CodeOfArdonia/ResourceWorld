@@ -20,13 +20,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class DifficultyCommandMixin {
     @Shadow
     @Final
-    private static DynamicCommandExceptionType ERROR_ALREADY_DIFFICULT;
+    private static DynamicCommandExceptionType ERROR_ALREADY_SAME_DIFFICULTY;
 
     @Inject(method = "setDifficulty", at = @At("HEAD"), cancellable = true)
     private static void handleResourceWorldDifficulty(CommandSourceStack source, Difficulty difficulty, CallbackInfoReturnable<Integer> cir) throws CommandSyntaxException {
         ResourceWorldData data = WorldConfig.get(source.getLevel().dimension());
         if (data == null) return;
-        if (data.getDifficulty() == difficulty) throw ERROR_ALREADY_DIFFICULT.create(difficulty.getKey());
+        if (data.getDifficulty() == difficulty) throw ERROR_ALREADY_SAME_DIFFICULTY.create(difficulty.getSerializedName());
         else {
             data.setDifficulty(difficulty);
             source.sendSuccess(() -> Component.translatable("commands.difficulty.success", difficulty.getDisplayName()), true);

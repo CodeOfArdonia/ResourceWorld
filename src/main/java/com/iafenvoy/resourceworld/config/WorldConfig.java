@@ -16,7 +16,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.Difficulty;
-import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.LevelResource;
 import org.apache.commons.io.FileUtils;
@@ -25,6 +25,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.FileNotFoundException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.NoSuchFileException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -52,7 +53,7 @@ public class WorldConfig {
                 saveConfig(config);
             }
             DATA.putAll(CODEC.parse(JsonOps.INSTANCE, config).resultOrPartial(ResourceWorld.LOGGER::error).orElseThrow().worlds());
-        } catch (FileNotFoundException e) {
+        } catch (FileNotFoundException | NoSuchFileException e) {
             saveConfig();
         } catch (Exception e) {
             ResourceWorld.LOGGER.error("Failed to load config", e);

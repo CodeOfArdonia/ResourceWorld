@@ -6,7 +6,8 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.Difficulty;
-import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.gamerules.GameRules;
+import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.level.dimension.LevelStem;
 import org.jetbrains.annotations.Nullable;
 
@@ -18,7 +19,7 @@ public final class ResourceWorldData {
             Codec.BOOL.fieldOf("enabled").forGetter(ResourceWorldData::isEnabled),
             Codec.LONG.fieldOf("seed").forGetter(ResourceWorldData::getSeed),
             Difficulty.CODEC.optionalFieldOf("difficulty", Difficulty.EASY).forGetter(ResourceWorldData::getDifficulty),
-            GameRuleCodec.CODEC.optionalFieldOf("gamerules", new GameRules()).forGetter(ResourceWorldData::getGameRules),
+            GameRuleCodec.CODEC.optionalFieldOf("gamerules", new GameRules(FeatureFlags.DEFAULT_FLAGS)).forGetter(ResourceWorldData::getGameRules),
             Settings.CODEC.optionalFieldOf("settings", new Settings()).forGetter(ResourceWorldData::getSettings)
     ).apply(i, ResourceWorldData::new));
     private final GenerateOption generateOption;
@@ -29,7 +30,7 @@ public final class ResourceWorldData {
     private final Settings settings;
 
     public ResourceWorldData(GenerateOption generateOption) {
-        this(generateOption, false, 0, Difficulty.EASY, new GameRules(), new Settings());
+        this(generateOption, false, 0, Difficulty.EASY, new GameRules(FeatureFlags.DEFAULT_FLAGS), new Settings());
     }
 
     public ResourceWorldData(GenerateOption generateOption, boolean enabled, long seed, Difficulty difficulty, GameRules gameRules, Settings settings) {

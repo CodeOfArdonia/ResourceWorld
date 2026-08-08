@@ -20,7 +20,8 @@
     "resource_world.mixins.json"
   ],
   "depends": {
-    "minecraft": [${supported_minecraft_versions}],
+    "minecraft": "${minecraft_version_range_fabric}",
+    "fabric-api": "*",
     "server_i18n_api": ">=1.5"
   }
 }

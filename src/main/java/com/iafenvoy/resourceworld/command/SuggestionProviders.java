@@ -11,5 +11,5 @@ import net.minecraft.resources.ResourceKey;
 
 final class SuggestionProviders {
     static final SuggestionProvider<CommandSourceStack> WORLD = net.minecraft.commands.synchronization.SuggestionProviders.register(RLUtil.id("world"), (context, builder) -> WorldConfig.appendSuggestions(builder));
-    static final SuggestionProvider<CommandSourceStack> DIMENSIONS = net.minecraft.commands.synchronization.SuggestionProviders.register(RLUtil.id("dimensions"), (context, builder) -> context.getSource() instanceof CommandSourceStack source ? SharedSuggestionProvider.suggestResource(source.registryAccess().registryOrThrow(Registries.LEVEL_STEM).holders().map(Holder.Reference::key).map(ResourceKey::location), builder) : context.getSource().customSuggestion(context));
+    static final SuggestionProvider<CommandSourceStack> DIMENSIONS = net.minecraft.commands.synchronization.SuggestionProviders.register(RLUtil.id("dimensions"), (context, builder) -> context.getSource() instanceof CommandSourceStack source ? SharedSuggestionProvider.suggestResource(source.registryAccess().lookupOrThrow(Registries.LEVEL_STEM).listElementIds().map(ResourceKey::identifier), builder) : context.getSource().customSuggestion(context));
 }

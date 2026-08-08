@@ -27,7 +27,11 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.permissions.Permission;
+import net.minecraft.server.permissions.PermissionLevel;
 import net.minecraft.world.level.dimension.LevelStem;
+
+import java.util.Set;
 
 import static net.minecraft.commands.Commands.argument;
 import static net.minecraft.commands.Commands.literal;
@@ -57,10 +61,10 @@ public final class ResourceWorldCommand {
                                 .executes(ResourceWorldCommand::teleport)
                         ))
                 .then(literal("create")
-                        .requires(ctx -> ctx.hasPermission(2))
+                        .requires(ctx -> ctx.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.GAMEMASTERS)))
                         .then(argument("world", StringArgumentType.word())
                                 .then(literal("type")
-                                        .then(argument("target", ResourceLocationArgument.id())
+                                        .then(argument("target", IdentifierArgument.id())
                                                 .suggests(SuggestionProviders.DIMENSIONS)
                                                 .then(argument("seed", LongArgumentType.longArg()).executes(ctx -> createMirrorWorld(ctx, LongArgumentType.getLong(ctx, "seed"))))
                                                 .executes(ctx -> createMirrorWorld(ctx, 0))
@@ -71,43 +75,43 @@ public final class ResourceWorldCommand {
                                                 .executes(ctx -> createFlatWorld(ctx, 0))
                                         ))
                                 .then(literal("mirror")
-                                        .then(argument("dimension", ResourceLocationArgument.id())
+                                        .then(argument("dimension", IdentifierArgument.id())
                                                 .suggests(SuggestionProviders.DIMENSIONS)
                                                 .executes(ResourceWorldCommand::createCopyWorld)
                                         ))
                                 .then(literal("template")
                                         .then(argument("template", StringArgumentType.word())
-                                                .then(argument("dimension", ResourceLocationArgument.id())
+                                                .then(argument("dimension", IdentifierArgument.id())
                                                         .suggests(SuggestionProviders.DIMENSIONS)
                                                         .executes(ResourceWorldCommand::createCopyTemplate)
                                                 )
                                         ))))
                 .then(literal("reset")
-                        .requires(ctx -> ctx.hasPermission(2))
+                        .requires(ctx -> ctx.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.GAMEMASTERS)))
                         .then(argument("world", StringArgumentType.word())
                                 .suggests(SuggestionProviders.WORLD)
                                 .executes(ResourceWorldCommand::resetWorld)
                         ))
                 .then(literal("delete")
-                        .requires(ctx -> ctx.hasPermission(2))
+                        .requires(ctx -> ctx.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.GAMEMASTERS)))
                         .then(argument("world", StringArgumentType.word())
                                 .suggests(SuggestionProviders.WORLD)
                                 .executes(ResourceWorldCommand::deleteWorld)
                         ))
                 .then(literal("enable")
-                        .requires(ctx -> ctx.hasPermission(2))
+                        .requires(ctx -> ctx.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.GAMEMASTERS)))
                         .then(argument("world", StringArgumentType.word())
                                 .suggests(SuggestionProviders.WORLD)
                                 .executes(ctx -> setEnable(ctx, true))
                         ))
                 .then(literal("disable")
-                        .requires(ctx -> ctx.hasPermission(2))
+                        .requires(ctx -> ctx.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.GAMEMASTERS)))
                         .then(argument("world", StringArgumentType.word())
                                 .suggests(SuggestionProviders.WORLD)
                                 .executes(ctx -> setEnable(ctx, false))
                         ))
                 .then(literal("settings")
-                        .requires(ctx -> ctx.hasPermission(2))
+                        .requires(ctx -> ctx.permissions().hasPermission(new Permission.HasCommandLevel(PermissionLevel.GAMEMASTERS)))
                         .then(settings))
         );
     }
@@ -130,14 +134,14 @@ public final class ResourceWorldCommand {
         ObjectUtil.assertOrThrow(delta <= 0, () -> ExceptionTypes.TELEPORT_COOLDOWN.create(source, String.valueOf(delta / 1000)));
         CommandHelper.sendMessage(source, "finding_position");
         BlockPos pos = ObjectUtil.nonNullOrThrow(PositionLocator.locate(world, data), () -> ExceptionTypes.CANNOT_FIND_POSITION.create(source));
-        player.teleportTo(world, pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, player.getYRot(), player.getXRot());
+        player.teleportTo(world, pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, Set.of(), player.getYRot(), player.getXRot(), false);
         COOLDOWNS.put(player, System.currentTimeMillis());
         return 1;
     }
 
     private static int createMirrorWorld(CommandContext<CommandSourceStack> ctx, long seed) throws CommandSyntaxException {
         CommandSourceStack source = ctx.getSource();
-        if (ResourceWorldHelper.createWorld(source.getServer(), CommandHelper.createKey(ctx), new TypeGenerateOption(ResourceKey.create(Registries.LEVEL_STEM, ResourceLocationArgument.getId(ctx, "target"))), seed))
+        if (ResourceWorldHelper.createWorld(source.getServer(), CommandHelper.createKey(ctx), new TypeGenerateOption(ResourceKey.create(Registries.LEVEL_STEM, IdentifierArgument.getId(ctx, "target"))), seed))
             CommandHelper.sendMessage(source, "success");
         return 1;
     }
@@ -151,7 +155,7 @@ public final class ResourceWorldCommand {
 
     private static int createCopyWorld(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         CommandSourceStack source = ctx.getSource();
-        ResourceKey<LevelStem> dimension = ResourceKey.create(Registries.LEVEL_STEM, ResourceLocationArgument.getId(ctx, "dimension"));
+        ResourceKey<LevelStem> dimension = ResourceKey.create(Registries.LEVEL_STEM, IdentifierArgument.getId(ctx, "dimension"));
         if (ResourceWorldHelper.createWorld(source.getServer(), CommandHelper.createKey(ctx), new MirrorGenerateOption(dimension), 0))
             CommandHelper.sendMessage(source, "success");
         return 1;
@@ -159,7 +163,7 @@ public final class ResourceWorldCommand {
 
     private static int createCopyTemplate(CommandContext<CommandSourceStack> ctx) throws CommandSyntaxException {
         CommandSourceStack source = ctx.getSource();
-        ResourceKey<LevelStem> dimension = ResourceKey.create(Registries.LEVEL_STEM, ResourceLocationArgument.getId(ctx, "dimension"));
+        ResourceKey<LevelStem> dimension = ResourceKey.create(Registries.LEVEL_STEM, IdentifierArgument.getId(ctx, "dimension"));
         if (ResourceWorldHelper.createWorld(source.getServer(), CommandHelper.createKey(ctx), new TemplateGenerateOption(StringArgumentType.getString(ctx, "template"), dimension), 0))
             CommandHelper.sendMessage(source, "success");
         return 1;

@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(net.minecraft.server.level.ServerPlayer.class)
 public class ServerPlayerMixin {
     @Inject(method = "setRespawnPosition", at = @At("HEAD"), cancellable = true)
-    private void preventResourceWorldRespawn(ResourceKey<Level> dimension, BlockPos pos, float angle, boolean forced, boolean sendMessage, CallbackInfo ci) {
-        if (pos != null && ResourceWorldHelper.isResourceWorld(dimension)) ci.cancel();
+    private void preventResourceWorldRespawn(net.minecraft.server.level.ServerPlayer.RespawnConfig config, boolean sendMessage, CallbackInfo ci) {
+        if (config != null && ResourceWorldHelper.isResourceWorld(config.respawnData().dimension())) ci.cancel();
     }
 }

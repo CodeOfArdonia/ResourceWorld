@@ -3,6 +3,7 @@ package com.iafenvoy.resourceworld.mixin;
 import com.google.common.collect.ImmutableList;
 import com.iafenvoy.resourceworld.MixinCache;
 import com.iafenvoy.resourceworld.ResourceWorld;
+import com.iafenvoy.resourceworld.ResourceWorldCallbacks;
 import com.iafenvoy.resourceworld.accessor.MinecraftServerAccessor;
 import com.iafenvoy.resourceworld.config.WorldConfig;
 import com.iafenvoy.resourceworld.config.generate.GenerateOption;
@@ -11,12 +12,10 @@ import net.minecraft.core.LayeredRegistryAccess;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.RegistryLayer;
 import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.progress.StoringChunkProgressListener;
 import net.minecraft.util.thread.BlockableEventLoop;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.BiomeManager;
@@ -61,13 +60,8 @@ public abstract class MinecraftServerMixin extends BlockableEventLoop<TickTask> 
     @Final
     private LayeredRegistryAccess<RegistryLayer> registries;
 
-    //? !fabric {
-    @Shadow(remap = false)
-    public abstract void markWorldsDirty();
-    //?}
-
     protected MinecraftServerMixin(String name) {
-        super(name);
+        super(name, false);
     }
 
     @Unique
@@ -96,14 +90,12 @@ public abstract class MinecraftServerMixin extends BlockableEventLoop<TickTask> 
         try {
             ServerLevelData data = this.worldData.overworldData();
             boolean bl = this.worldData.isDebugWorld();
-            WorldOptions generatorOptions = this.worldData.worldGenOptions();
-            long l = generatorOptions.seed();
+            long l = this.resourceWorld$self().overworld().getSeed();
             long m = BiomeManager.obfuscateSeed(l);
             DerivedLevelData unmodifiableLevelProperties = new DerivedLevelData(this.worldData, data);
-            this.levels.put(key, new ServerLevel(this.resourceWorld$self(), this.executor, this.storageSource, unmodifiableLevelProperties, key, option.createStem(this.resourceWorld$self().registryAccess()), /*? >=1.20.5 {*/StoringChunkProgressListener.createFromGameruleRadius/*?} else {*//*new StoringChunkProgressListener*//*?}*/(16), bl, m, ImmutableList.of(), false, null));
-            //? !fabric {
-            this.markWorldsDirty();
-            //?}
+            MixinCache.registerResourceWorldData(unmodifiableLevelProperties, key);
+            this.levels.put(key, new ServerLevel(this.resourceWorld$self(), this.executor, this.storageSource, unmodifiableLevelProperties, key, option.createStem(this.resourceWorld$self().registryAccess()), bl, m, ImmutableList.of(), false));
+            ResourceWorldCallbacks.markWorldDirty(this.resourceWorld$self());
             return true;
         } catch (Exception e) {
             ResourceWorld.LOGGER.error("Failed to create world", e);
@@ -114,8 +106,6 @@ public abstract class MinecraftServerMixin extends BlockableEventLoop<TickTask> 
     @Override
     public void resourceWorld$removeWorld(ResourceKey<Level> key) {
         this.levels.remove(key);
-        //? !fabric {
-        this.markWorldsDirty();
-        //?}
+        ResourceWorldCallbacks.markWorldDirty(this.resourceWorld$self());
     }
 }

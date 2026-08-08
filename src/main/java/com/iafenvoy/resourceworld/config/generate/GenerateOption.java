@@ -6,12 +6,12 @@ import com.mojang.serialization.Lifecycle;
 //? >=1.20.5 {
 import com.mojang.serialization.MapCodec;
 //?}
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.core.MappedRegistry;
 import net.minecraft.core.Registry;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.dimension.LevelStem;
 
 import java.util.function.Function;
@@ -30,5 +30,5 @@ public interface GenerateOption {
 
     LevelStem createStem(RegistryAccess registries);
 
-    ResourceLocation getDimensionTypeId();
+    Identifier getDimensionTypeId();
 }

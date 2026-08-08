@@ -10,7 +10,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.dimension.LevelStem;
 
 public record TemplateGenerateOption(String template, ResourceKey<LevelStem> dimension) implements GenerateOption {
@@ -26,11 +26,11 @@ public record TemplateGenerateOption(String template, ResourceKey<LevelStem> dim
 
     @Override
     public LevelStem createStem(RegistryAccess registries) {
-        return registries.registryOrThrow(Registries.LEVEL_STEM).getOrThrow(this.dimension);
+        return registries.lookupOrThrow(Registries.LEVEL_STEM).getOrThrow(this.dimension).value();
     }
 
     @Override
-    public ResourceLocation getDimensionTypeId() {
-        return this.dimension.location();
+    public Identifier getDimensionTypeId() {
+        return this.dimension.identifier();
     }
 }

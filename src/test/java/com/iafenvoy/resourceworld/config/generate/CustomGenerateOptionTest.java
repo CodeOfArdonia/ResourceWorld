@@ -103,6 +103,19 @@ class CustomGenerateOptionTest {
     }
 
     @Test
+    void existingGenerationTypesStillRoundTrip() {
+        for (String definition : List.of(
+                "{\"type\":\"resource_world:type\",\"target\":\"minecraft:overworld\"}",
+                "{\"type\":\"resource_world:flat\",\"preset\":\"minecraft:bedrock\"}",
+                "{\"type\":\"resource_world:mirror\",\"dimension\":\"minecraft:the_nether\"}",
+                "{\"type\":\"resource_world:template\",\"template\":\"example\",\"dimension\":\"minecraft:overworld\"}")) {
+            JsonElement json = JsonParser.parseString(definition);
+            GenerateOption restored = GenerateOption.CODEC.parse(JsonOps.INSTANCE, json).result().orElseThrow();
+            assertEquals(json, GenerateOption.CODEC.encodeStart(JsonOps.INSTANCE, restored).result().orElseThrow());
+        }
+    }
+
+    @Test
     void rejectsUnknownRegistryReferences() {
         JsonObject json = JsonParser.parseString(PRESET).getAsJsonObject();
         json.getAsJsonObject("generator").addProperty("settings", "resource_world:missing_settings");

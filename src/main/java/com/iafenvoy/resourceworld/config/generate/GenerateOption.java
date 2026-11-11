@@ -23,6 +23,7 @@ public interface GenerateOption {
         Registry.register(registry, RLUtil.id("custom"), CustomGenerateOption.CODEC);
         Registry.register(registry, RLUtil.id("mirror"), MirrorGenerateOption.CODEC);
         Registry.register(registry, RLUtil.id("template"), TemplateGenerateOption.CODEC);
+        registry.freeze();
     });
 
     Codec<GenerateOption> CODEC = REGISTRY.byNameCodec().dispatch("type", GenerateOption::codec, Function.identity());

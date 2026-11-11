@@ -23,6 +23,7 @@ Root command: `/resourceworld`
 
 - `/resourceworld create <world id> <type/flat> ... [<seed>]`: Create a resource world with specific dimension options.
   Seed is optional, leave blank for random seed.
+- `/resourceworld create <world id> custom <preset> [<seed>]`: Create a resource world from a custom dimension JSON preset.
 - `/resourceworld create <world id> mirror <dimension>`: Create a snapshot of an existing dimension.
 - `/resourceworld create <world id> template <template> <dimension>`: Create a snapshot from a template.
 - `/resourceworld delete <world id>`: Permanently delete a resource world.
@@ -52,7 +53,43 @@ overworld, `DIM-1` is the Nether, `DIM1` is the End, and `dimensions/<namespace>
 Both types preserve their original source seed and never accept a seed argument. Resetting only refreshes the copied data.
 Templates must include their original `level.dat` so `template` can read the seed.
 
+### Custom generation presets
+
+Place a standard dimension (`LevelStem`) JSON file at
+`<server directory>/resourceworld/presets/<preset>.json`. Preset names may contain letters, numbers, underscores and
+hyphens; omit `.json` in the command. Available names are suggested by the command.
+
+For example, `resourceworld/presets/desert.json` can contain:
+
+```json
+{
+  "type": "minecraft:overworld",
+  "generator": {
+    "type": "minecraft:noise",
+    "settings": "minecraft:overworld",
+    "biome_source": {
+      "type": "minecraft:fixed",
+      "biome": "minecraft:desert"
+    }
+  }
+}
+```
+
+Create it with `/resourceworld create desert_mine custom desert 12345`, or omit the seed for a random seed.
+The `LevelStem` itself does not need an entry in `minecraft:dimension`; referenced dimension types, biomes,
+noise settings and other registry entries must still be available, including any required data packs or mods.
+
+The complete JSON is copied into the save's `resource_world.json` as
+`"generate": {"type": "resource_world:custom", "stem": { ... }}`. Restarting or resetting the world uses this saved
+snapshot, even if the source preset file is changed or removed. Referenced registry entries are resolved from the
+server's current registries; they are not copied into the snapshot. Resetting generates a new seed as with `type` worlds.
+Invalid files or unresolved registry entries are reported before a world is added to the config.
+
 ## Developer Usage
+
+To use an unregistered `LevelStem` directly, call `CustomGenerateOption.fromStem(server.registryAccess(), stem)` and
+pass the resulting option to `ResourceWorldHelper.createWorld`. This stores the stem's JSON representation for future
+restarts and resets. `new CustomGenerateOption(jsonObject)` also accepts a dimension JSON object.
 
 If you want to customize the dimension random teleport locator, create a class implementing
 `RandomTeleportEntrypoint` and register it through the Integration API entrypoint `random_teleport_locator`.

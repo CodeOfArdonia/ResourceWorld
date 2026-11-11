@@ -1,6 +1,7 @@
 package com.iafenvoy.resourceworld.command;
 
 import com.iafenvoy.resourceworld.config.WorldConfig;
+import com.iafenvoy.resourceworld.config.generate.CustomGenerateOption;
 import com.iafenvoy.resourceworld.util.RLUtil;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.minecraft.commands.CommandSourceStack;
@@ -11,5 +12,6 @@ import net.minecraft.resources.ResourceKey;
 
 final class SuggestionProviders {
     static final SuggestionProvider<CommandSourceStack> WORLD = net.minecraft.commands.synchronization.SuggestionProviders.register(RLUtil.id("world"), (context, builder) -> WorldConfig.appendSuggestions(builder));
+    static final SuggestionProvider<CommandSourceStack> CUSTOM_PRESETS = net.minecraft.commands.synchronization.SuggestionProviders.register(RLUtil.id("custom_presets"), (context, builder) -> context.getSource() instanceof CommandSourceStack source ? SharedSuggestionProvider.suggest(CustomGenerateOption.listPresets(source.getServer()), builder) : context.getSource().customSuggestion(context));
     static final SuggestionProvider<CommandSourceStack> DIMENSIONS = net.minecraft.commands.synchronization.SuggestionProviders.register(RLUtil.id("dimensions"), (context, builder) -> context.getSource() instanceof CommandSourceStack source ? SharedSuggestionProvider.suggestResource(source.registryAccess().lookupOrThrow(Registries.LEVEL_STEM).listElementIds().map(ResourceKey::identifier), builder) : context.getSource().customSuggestion(context));
 }

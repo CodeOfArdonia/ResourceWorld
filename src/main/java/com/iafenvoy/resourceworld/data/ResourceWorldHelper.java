@@ -79,7 +79,12 @@ public class ResourceWorldHelper {
             WorldConfig.remove(key);
             return false;
         }
-        return recreateWorld(server, key, stem);
+        if (!recreateWorld(server, key, stem)) {
+            WorldConfig.remove(key);
+            return false;
+        }
+        WorldConfig.saveConfig();
+        return true;
     }
 
     public static boolean recreateWorld(MinecraftServer server, ResourceKey<Level> key, GenerateOption option) {

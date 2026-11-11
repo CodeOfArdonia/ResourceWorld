@@ -23,6 +23,9 @@ repositories {
 }
 
 dependencies {
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.11.4")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.11.4")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.11.4")
     compileOnly("net.fabricmc:fabric-loader:${property("deps.fabric-loader")}")
     compileOnly("net.fabricmc.fabric-api:fabric-api:${property("deps.fabric-api")}")
     compileOnly("com.terraformersmc:modmenu:${property("deps.mod_menu")}")
@@ -52,10 +55,18 @@ neoForge {
             sourceSet(sourceSets["main"])
         }
     }
+    unitTest {
+        enable()
+        testedMod = mods[property("mod.id") as String]
+    }
     sourceSets["main"].resources.srcDir("src/main/generated")
 }
 
 tasks {
+    test {
+        useJUnitPlatform()
+    }
+
     named("createMinecraftArtifacts") {
         dependsOn("stonecutterGenerate")
     }
@@ -98,6 +109,7 @@ tasks.named<ProcessResources>("processResources") {
         this["supported_minecraft_versions"] = "[${stonecutter.current.version}]"
     }
 
+    inputs.properties(props)
     filesMatching(listOf("fabric.mod.json", "META-INF/neoforge.mods.toml")) {
         expand(props)
     }

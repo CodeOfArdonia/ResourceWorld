@@ -24,6 +24,9 @@ repositories {
 }
 
 dependencies {
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.11.4")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.11.4")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.11.4")
     minecraft("com.mojang:minecraft:${property("deps.minecraft")}")
     mappings(loom.layered {
         officialMojangMappings()
@@ -46,6 +49,11 @@ fabricApi {
 }
 
 tasks {
+    test {
+        useJUnitPlatform()
+        workingDir = layout.buildDirectory.dir("test-game").get().asFile.apply { mkdirs() }
+    }
+
     processResources {
         exclude("**/neoforge.mods.toml", "**/mods.toml", "**/pack.mcmeta")
         dependsOn("stonecutterGenerate")
@@ -92,6 +100,7 @@ tasks.named<ProcessResources>("processResources") {
         this["supported_minecraft_versions"] = supportedMinecraftVersions.joinToString(",") { x -> "\"${x}\"" }
     }
 
+    inputs.properties(props)
     filesMatching(listOf("fabric.mod.json", "META-INF/neoforge.mods.toml", "META-INF/mods.toml")) {
         expand(props)
     }

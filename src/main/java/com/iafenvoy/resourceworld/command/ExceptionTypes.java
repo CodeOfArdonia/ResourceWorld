@@ -12,6 +12,8 @@ final class ExceptionTypes {
     static final ServerI18nExceptionType DISABLED = create("disabled");
     static final ServerI18nExceptionType TELEPORT_COOLDOWN = create("teleport_cooldown");
     static final ServerI18nExceptionType CANNOT_FIND_POSITION = create("cannot_find_position");
+    static final ServerI18nExceptionType INVALID_CUSTOM_PRESET = create("invalid_custom_preset");
+    static final ServerI18nExceptionType CREATE_FAILED = create("create_failed");
 
     private static ServerI18nExceptionType create(String key) {
         return new ServerI18nExceptionType(String.format(Locale.ROOT, "message.resource_world.%s", key));

@@ -61,6 +61,9 @@ mixin {
     config("${property("mod.id")}.mixins.json")
 }
 
+// Legacy Forge has no FML JUnit launcher; run these shared codec tests on Fabric and NeoForge.
+sourceSets["test"].java.exclude("**/CustomGenerateOptionTest.java")
+
 tasks {
     processResources {
         exclude("**/fabric.mod.json", "**/neoforge.mods.toml", "**/*.accesswidener")
@@ -72,7 +75,7 @@ tasks {
 
     register<Copy>("buildAndCollect") {
         group = "build"
-        from(jar.map { it.archiveFile })
+        from(project.tasks.named<org.gradle.jvm.tasks.Jar>("reobfJar").map { it.archiveFile })
         into(rootProject.layout.buildDirectory.file("libs/${project.property("mod.version")}"))
         dependsOn("build")
     }
@@ -116,6 +119,7 @@ tasks.named<ProcessResources>("processResources") {
         this["supported_minecraft_versions"] = supportedMinecraftVersions.joinToString(",") { x -> "[${x}]" }
     }
 
+    inputs.properties(props)
     filesMatching(listOf("fabric.mod.json", "META-INF/neoforge.mods.toml", "META-INF/mods.toml")) {
         expand(props)
     }

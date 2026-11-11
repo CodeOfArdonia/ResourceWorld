@@ -1,7 +1,9 @@
 package com.iafenvoy.resourceworld.command;
 
+import com.iafenvoy.resourceworld.ResourceWorld;
 import com.iafenvoy.resourceworld.config.ResourceWorldData;
 import com.iafenvoy.resourceworld.config.WorldConfig;
+import com.iafenvoy.resourceworld.config.generate.CustomGenerateOption;
 import com.iafenvoy.resourceworld.config.generate.FlatGenerateOption;
 import com.iafenvoy.resourceworld.config.generate.MirrorGenerateOption;
 import com.iafenvoy.resourceworld.config.generate.TemplateGenerateOption;
@@ -28,6 +30,8 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.dimension.LevelStem;
+
+import java.io.IOException;
 
 import static net.minecraft.commands.Commands.argument;
 import static net.minecraft.commands.Commands.literal;
@@ -69,6 +73,12 @@ public final class ResourceWorldCommand {
                                         .then(argument("preset", StringArgumentType.string())
                                                 .then(argument("seed", LongArgumentType.longArg()).executes(ctx -> createFlatWorld(ctx, LongArgumentType.getLong(ctx, "seed"))))
                                                 .executes(ctx -> createFlatWorld(ctx, 0))
+                                        ))
+                                .then(literal("custom")
+                                        .then(argument("preset", StringArgumentType.word())
+                                                .suggests(SuggestionProviders.CUSTOM_PRESETS)
+                                                .then(argument("seed", LongArgumentType.longArg()).executes(ctx -> createCustomWorld(ctx, LongArgumentType.getLong(ctx, "seed"))))
+                                                .executes(ctx -> createCustomWorld(ctx, 0))
                                         ))
                                 .then(literal("mirror")
                                         .then(argument("dimension", ResourceLocationArgument.id())
@@ -146,6 +156,24 @@ public final class ResourceWorldCommand {
         CommandSourceStack source = ctx.getSource();
         if (ResourceWorldHelper.createWorld(source.getServer(), CommandHelper.createKey(ctx), new FlatGenerateOption(StringArgumentType.getString(ctx, "preset")), seed))
             CommandHelper.sendMessage(source, "success");
+        return 1;
+    }
+
+    private static int createCustomWorld(CommandContext<CommandSourceStack> ctx, long seed) throws CommandSyntaxException {
+        CommandSourceStack source = ctx.getSource();
+        var key = CommandHelper.createKey(ctx);
+        String preset = StringArgumentType.getString(ctx, "preset");
+        CustomGenerateOption option;
+        try {
+            option = CustomGenerateOption.fromFile(source.getServer(), preset);
+            option.createStem(source.registryAccess());
+        } catch (IOException | RuntimeException e) {
+            ResourceWorld.LOGGER.error("Failed to load custom resource world preset {}", preset, e);
+            throw ExceptionTypes.INVALID_CUSTOM_PRESET.create(source, preset, String.valueOf(e.getMessage()));
+        }
+        if (!ResourceWorldHelper.createWorld(source.getServer(), key, option, seed))
+            throw ExceptionTypes.CREATE_FAILED.create(source);
+        CommandHelper.sendMessage(source, "success");
         return 1;
     }
 

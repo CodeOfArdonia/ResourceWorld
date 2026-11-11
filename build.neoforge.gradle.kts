@@ -20,7 +20,10 @@ repositories {
     maven("https://api.modrinth.com/maven") { name = "Modrinth Maven" }
 }
 
-dependencies{
+dependencies {
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.11.4")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.11.4")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.11.4")
     implementation("com.iafenvoy.integration:integration-neoforge:0.2")?.let { jarJar(it) }
     implementation("maven.modrinth:server-i18n-api:${property("deps.server_i18n_api")}")
 }
@@ -51,12 +54,20 @@ neoForge {
             sourceSet(sourceSets["main"])
         }
     }
+    unitTest {
+        enable()
+        testedMod = mods[property("mod.id") as String]
+    }
     sourceSets["main"].resources.srcDir("src/main/generated")
 }
 
 tasks {
     processResources {
         exclude("**/fabric.mod.json", "**/*.accesswidener", "**/mods.toml")
+    }
+
+    test {
+        useJUnitPlatform()
     }
 
     named("createMinecraftArtifacts") {
@@ -102,6 +113,7 @@ tasks.named<ProcessResources>("processResources") {
         this["supported_minecraft_versions"] = supportedMinecraftVersions.joinToString(",") { x -> "[${x}]" }
     }
 
+    inputs.properties(props)
     filesMatching(listOf("fabric.mod.json", "META-INF/neoforge.mods.toml", "META-INF/mods.toml")) {
         expand(props)
     }

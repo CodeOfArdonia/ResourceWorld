@@ -20,8 +20,10 @@ public interface GenerateOption {
     Registry</*? >=1.20.5 {*/MapCodec/*?} else {*//*Codec*//*?}*/<? extends GenerateOption>> REGISTRY = Util.make(new MappedRegistry<>(ResourceKey.createRegistryKey(RLUtil.id("generate_option_type")), Lifecycle.stable()), registry -> {
         Registry.register(registry, RLUtil.id("type"), TypeGenerateOption.CODEC);
         Registry.register(registry, RLUtil.id("flat"), FlatGenerateOption.CODEC);
+        Registry.register(registry, RLUtil.id("custom"), CustomGenerateOption.CODEC);
         Registry.register(registry, RLUtil.id("mirror"), MirrorGenerateOption.CODEC);
         Registry.register(registry, RLUtil.id("template"), TemplateGenerateOption.CODEC);
+        registry.freeze();
     });
 
     Codec<GenerateOption> CODEC = REGISTRY.byNameCodec().dispatch("type", GenerateOption::codec, Function.identity());
